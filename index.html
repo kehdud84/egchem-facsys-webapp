@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EGChem FACSYS 점검 시스템</title>
+    <meta name="theme-color" content="#2b2b2b">
+    <meta name="description" content="EGChem FACSYS 설비 및 장비 점검 관리 시스템">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <style>
+        /* 모든 CSS가 여기에 포함됨 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        
+        .main-container {
+            text-align: center;
+            background-color: #2b2b2b;
+            padding: 3rem;
+            border-radius: 12px;
+            border: 2px solid #4CAF50;
+            max-width: 500px;
+            width: 100%;
+            margin: 2rem auto;
+        }
+        
+        .main-container h1 {
+            color: #64b5f6;
+            font-size: 1.7rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+        }
+        
+        .main-button {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 2rem 4rem;
+            border-radius: 12px;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            margin: 2rem 0;
+        }
+        
+        .main-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        
+        .status-indicator {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        
+        .status-indicator.connected {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+        
+        .status-indicator.disconnected {
+            background-color: #f44336;
+            color: #fff;
+        }
+        
+        .btn-secondary {
+            background-color: #666;
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            margin: 1rem 0;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #777;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: #2b2b2b;
+            border-radius: 8px;
+            border: 2px solid #4CAF50;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #555;
+        }
+        
+        .modal-header h2 {
+            color: #64b5f6;
+            margin: 0;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-btn:hover {
+            color: #f44336;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-top: 1px solid #555;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .btn-primary {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+        
+        .success-message {
+            background-color: #2e7d32;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            .main-button {
+                padding: 1.5rem 3rem;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>FACSYS<br>설비 및 장비 점검 시스템</h1>
+        
+        <div class="status-indicator disconnected" id="connection-status">
+            ❌ 연결 안됨
+        </div>
+        
+        <button class="main-button" onclick="openEquipmentCheck()">
+            제조파트
+        </button>
+        
+        <button class="btn-secondary" onclick="openConnectionSettings()">
+            연결 설정
+        </button>
+        
+        <div id="success-message" class="success-message" style="display: none;">
+            ✅ 웹앱이 정상적으로 로드되었습니다!
+        </div>
+    </div>
+    
+    <!-- 연결 설정 모달 -->
+    <div id="connection-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔧 구글 시트 연결 설정</h2>
+                <button class="close-btn" onclick="closeConnectionSettings()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Google Apps Script 웹앱 URL:</label>
+                    <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/.../exec">
+                </div>
+                <div class="form-group">
+                    <label>스프레드시트 ID:</label>
+                    <input type="text" id="spreadsheet-id" value="1QjU-kQDRgDrZ5tUn6awJhRWWx9u0Mt4uLCFmkOqLNcQ" readonly>
+                </div>
+                <div class="form-group">
+                    <label>연결 상태:</label>
+                    <span id="modal-connection-status" class="status-indicator disconnected">연결 안됨</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeConnectionSettings()">취소</button>
+                <button class="btn-primary" onclick="testConnection()">연결 테스트</button>
+                <button class="btn-primary" onclick="saveConnectionSettings()">저장</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 모든 JavaScript가 여기에 포함됨
+        console.log('✅ EGChem FACSYS 웹앱 로드 완료!');
+        
+        // 간단한 구글 시트 연동
+        class SimpleGoogleSheetsManager {
+            constructor() {
+                this.isConnected = false;
+                this.webAppUrl = '';
+                this.init();
+            }
+            
+            init() {
+                const savedUrl = localStorage.getItem('google_webapp_url');
+                if (savedUrl) {
+                    this.webAppUrl = savedUrl;
+                    document.getElementById('webapp-url').value = savedUrl;
+                }
+            }
+            
+            setWebAppUrl(url) {
+                this.webAppUrl = url;
+            }
+            
+            async testConnection() {
+                if (!this.webAppUrl) {
+                    throw new Error('웹앱 URL이 설정되지 않았습니다.');
+                }
+                
+                return new Promise((resolve, reject) => {
+                    const callbackName = `callback_${Date.now()}`;
+                    
+                    window[callbackName] = (result) => {
+                        if (script.parentNode) {
+                            document.head.removeChild(script);
+                        }
+                        delete window[callbackName];
+                        
+                        if (result.success) {
+                            this.isConnected = true;
+                            resolve(true);
+                        } else {
+                            reject(new Error(result.error || '연결 실패'));
+                        }
+                    };
+                    
+                    const script = document.createElement('script');
+                    const params = new URLSearchParams({
+                        callback: callbackName,
+                        action: 'testConnection'
+                    });
+                    
+                    script.src = `${this.webAppUrl}?${params.toString()}`;
+                    script.onerror = () => {
+                        if (script.parentNode) {
+                            document.head.removeChild(script);
+                        }
+                        delete window[callbackName];
+                        reject(new Error('웹앱 URL을 확인해주세요.'));
+                    };
+                    
+                    document.head.appendChild(script);
+                });
+            }
+            
+            updateConnectionStatus(connected) {
+                const statusElement = document.getElementById('connection-status');
+                const modalStatusElement = document.getElementById('modal-connection-status');
+                
+                if (connected) {
+                    statusElement.textContent = '✅ 연결됨';
+                    statusElement.className = 'status-indicator connected';
+                    modalStatusElement.textContent = '연결됨';
+                    modalStatusElement.className = 'status-indicator connected';
+                } else {
+                    statusElement.textContent = '❌ 연결 안됨';
+                    statusElement.className = 'status-indicator disconnected';
+                    modalStatusElement.textContent = '연결 안됨';
+                    modalStatusElement.className = 'status-indicator disconnected';
+                }
+            }
+        }
+        
+        // 전역 인스턴스 생성
+        const googleSheetsManager = new SimpleGoogleSheetsManager();
+        
+        // 연결 설정 모달 열기
+        function openConnectionSettings() {
+            document.getElementById('connection-modal').style.display = 'flex';
+        }
+        
+        // 연결 설정 모달 닫기
+        function closeConnectionSettings() {
+            document.getElementById('connection-modal').style.display = 'none';
+        }
+        
+        // 연결 테스트
+        async function testConnection() {
+            const webappUrl = document.getElementById('webapp-url').value.trim();
+            
+            if (!webappUrl) {
+                alert('Google Apps Script 웹앱 URL을 입력해주세요.');
+                return;
+            }
+            
+            googleSheetsManager.setWebAppUrl(webappUrl);
+            
+            try {
+                await googleSheetsManager.testConnection();
+                googleSheetsManager.updateConnectionStatus(true);
+                alert('구글 시트 연결이 성공했습니다!');
+            } catch (error) {
+                googleSheetsManager.updateConnectionStatus(false);
+                alert('구글 시트 연결에 실패했습니다: ' + error.message);
+            }
+        }
+        
+        // 연결 설정 저장
+        function saveConnectionSettings() {
+            const webappUrl = document.getElementById('webapp-url').value.trim();
+            
+            if (!webappUrl) {
+                alert('Google Apps Script 웹앱 URL을 입력해주세요.');
+                return;
+            }
+            
+            googleSheetsManager.setWebAppUrl(webappUrl);
+            localStorage.setItem('google_webapp_url', webappUrl);
+            closeConnectionSettings();
+            alert('연결 설정이 저장되었습니다.');
+        }
+        
+        // 점검 화면 열기
+        function openEquipmentCheck() {
+            if (googleSheetsManager.isConnected) {
+                alert('점검 기능이 준비되었습니다!\n구글 시트 연결이 완료되어 데이터를 저장할 수 있습니다.');
+            } else {
+                alert('점검 기능을 사용하려면 먼저 "연결 설정" 버튼을 클릭하여 구글 시트를 연결해주세요.');
+            }
+        }
+        
+        // 페이지 로드 시 연결 상태 확인
+        window.addEventListener('load', () => {
+            // 성공 메시지 표시
+            document.getElementById('success-message').style.display = 'block';
+            
+            if (googleSheetsManager.webAppUrl) {
+                googleSheetsManager.testConnection()
+                    .then(() => {
+                        googleSheetsManager.updateConnectionStatus(true);
+                    })
+                    .catch(() => {
+                        googleSheetsManager.updateConnectionStatus(false);
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
