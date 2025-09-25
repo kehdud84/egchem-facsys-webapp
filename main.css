@@ -1,0 +1,976 @@
+/* EGChem FACSYS 점검 시스템 - 메인 스타일 */
+
+/* 기본 설정 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    line-height: 1.6;
+}
+
+/* 로딩 화면 */
+.loading-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #1a1a1a;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #333;
+    border-top: 4px solid #4CAF50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 메인 앱 */
+.main-app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 메인 화면 (기존 프로그램과 동일) */
+.main-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #1a1a1a;
+}
+
+.main-container {
+    text-align: center;
+    background-color: #2b2b2b;
+    padding: 3rem;
+    border-radius: 12px;
+    border: 2px solid #4CAF50;
+    max-width: 500px;
+    width: 100%;
+}
+
+/* 로고 컨테이너 */
+.logo-container {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(43, 43, 43, 0.3); /* 반투명한 어두운 배경 */
+    padding: 1rem;
+    border-radius: 12px;
+    border: none; /* 테두리 제거 */
+    backdrop-filter: blur(5px); /* 블러 효과 */
+}
+
+.company-logo {
+    max-width: 375px; /* 250px → 375px (1.5배 확대) */
+    max-height: 210px; /* 140px → 210px (1.5배 확대) */
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: 
+        drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))
+        brightness(1.1) 
+        contrast(1.05)
+        sepia(0.1); /* 약간의 따뜻한 톤 추가 */
+    transition: transform 0.3s ease;
+    background: linear-gradient(135deg, #2b2b2b 0%, #1a1a1a 100%); /* 어두운 그라데이션 배경 */
+    border-radius: 8px; /* 모서리 둥글게 */
+    padding: 0.5rem; /* 내부 여백 */
+}
+
+.company-logo:hover {
+    transform: scale(1.05);
+}
+
+.main-container h1 {
+    color: #64b5f6;
+    font-size: 1.7rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+}
+
+.main-button-container {
+    margin: 2rem 0;
+}
+
+.main-button {
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    padding: 2rem 4rem;
+    border-radius: 12px;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.main-button:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+}
+
+.settings-container {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.connection-status-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.connection-status-display .status-indicator {
+    font-size: 0.9rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+/* 점검 화면 - 기존 프로그램과 동일한 구조 */
+.equipment-check-screen {
+    min-height: 100vh;
+    background-color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 단계별 점검 스타일 */
+.inspection-step {
+    padding: 2rem;
+    background-color: #2b2b2b;
+    border-radius: 8px;
+    margin: 1rem;
+    border: 2px solid #4CAF50;
+}
+
+.inspection-step h2 {
+    color: #64b5f6;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.location-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.location-btn {
+    padding: 1rem;
+    background-color: #3a3a3a;
+    color: #fff;
+    border: 2px solid #555;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.location-btn:hover {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+    transform: translateY(-2px);
+}
+
+.location-btn.selected {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.step-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* 상단 프레임 */
+.top-frame {
+    background-color: #2d2d2d;
+    padding: 1rem 2rem;
+    border-bottom: 2px solid #404040;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.back-button {
+    background-color: #FF6B35;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #e55a2b;
+}
+
+.user-info {
+    color: #64b5f6;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+/* 메인 레이아웃 (왼쪽 사이드바 + 오른쪽 메인) */
+.main-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    position: relative; /* 상대 위치 설정 */
+}
+
+/* 왼쪽 사이드바 */
+.sidebar {
+    width: 200px; /* 너비를 280px에서 200px로 줄임 */
+    background-color: #1a1a1a;
+    padding: 0.8rem; /* 패딩도 약간 줄임 */
+    border-right: 6px solid #333; /* 테두리도 약간 줄임 */
+    overflow-y: auto;
+    transition: transform 0.3s ease; /* 슬라이드 애니메이션 */
+}
+
+/* 사이드바 숨김 상태 */
+.sidebar.hidden {
+    transform: translateX(-100%); /* 왼쪽으로 완전히 숨김 */
+    width: 0; /* 너비도 0으로 설정하여 공간 완전 제거 */
+    padding: 0; /* 패딩도 제거 */
+    border: none; /* 테두리도 제거 */
+}
+
+/* 사이드바가 숨겨졌을 때 메인 콘텐츠가 전체 너비 차지 */
+.sidebar.hidden + .main-content {
+    width: 100%; /* 전체 너비 차지 */
+    margin-left: 0; /* 왼쪽 마진 제거 */
+}
+
+/* 사이드바 토글 버튼 */
+.sidebar-toggle {
+    display: none; /* 기본적으로 숨김 */
+    position: fixed;
+    top: 50%;
+    left: 10px;
+    z-index: 1000;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+    background-color: #45a049;
+    transform: translateX(5px);
+}
+
+.inspection-types-section,
+.equipment-section {
+    margin-bottom: 2rem;
+}
+
+.inspection-types-section h3,
+.equipment-section h3 {
+    color: #64b5f6;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #4CAF50;
+}
+
+/* 점검 유형 버튼 */
+.type-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.type-btn {
+    padding: 0.5rem 0.6rem; /* 세로 70%, 가로 50% 수준으로 조정 */
+    background-color: #333;
+    border: 1px solid #555;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    font-size: 0.85rem; /* 폰트 크기도 약간 줄임 */
+}
+
+.type-btn:hover {
+    background-color: #444;
+    border-color: #4CAF50;
+}
+
+.type-btn.selected {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+/* 장비 목록 */
+.equipment-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.equipment-item {
+    padding: 0.5rem 0.6rem; /* 세로 70%, 가로 50% 수준으로 조정 */
+    background-color: #333;
+    border-radius: 4px;
+    border-left: 3px solid #4CAF50; /* 테두리도 약간 줄임 */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.85rem; /* 폰트 크기도 약간 줄임 */
+}
+
+.equipment-item:hover {
+    background-color: #444;
+}
+
+.equipment-item.warning {
+    border-left-color: #ff9800;
+}
+
+.equipment-item.alarm {
+    border-left-color: #f44336;
+}
+
+.equipment-item.selected {
+    background-color: #4CAF50;
+    border-left-color: #4CAF50;
+}
+
+.equipment-name {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.equipment-status {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* 오른쪽 메인 콘텐츠 */
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    background-color: #1a1a1a;
+    overflow-y: auto;
+    transition: width 0.3s ease; /* 너비 변화 애니메이션 */
+    min-width: 0; /* flex 아이템이 축소될 수 있도록 */
+}
+
+.inspection-form h2 {
+    color: #64b5f6;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+}
+
+/* 헤더 */
+.app-header {
+    background-color: #2b2b2b;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #4CAF50;
+}
+
+.app-header h1 {
+    color: #64b5f6;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* 네비게이션 */
+.nav-tabs {
+    display: flex;
+    background-color: #333;
+    border-bottom: 1px solid #555;
+}
+
+.nav-tab {
+    flex: 1;
+    padding: 1rem;
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.nav-tab:hover {
+    background-color: #444;
+    color: #fff;
+}
+
+.nav-tab.active {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+/* 메인 콘텐츠 */
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* 점검 유형 버튼 */
+.inspection-types h2 {
+    margin-bottom: 1.5rem;
+    color: #64b5f6;
+}
+
+.type-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.type-btn {
+    padding: 1.5rem;
+    background-color: #333;
+    border: 2px solid #555;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.type-btn:hover {
+    background-color: #444;
+    border-color: #4CAF50;
+}
+
+.type-btn.selected {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+/* 장비 목록 */
+.equipment-list h3 {
+    margin-bottom: 1rem;
+    color: #64b5f6;
+}
+
+.equipment-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.equipment-item {
+    padding: 1rem;
+    background-color: #333;
+    border-radius: 8px;
+    border-left: 4px solid #4CAF50;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.equipment-item:hover {
+    background-color: #444;
+}
+
+.equipment-item.warning {
+    border-left-color: #ff9800;
+}
+
+.equipment-item.alarm {
+    border-left-color: #f44336;
+}
+
+.equipment-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.equipment-status {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* 점검 폼 */
+.inspection-form h3 {
+    margin-bottom: 1.5rem;
+    color: #64b5f6;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 80px;
+}
+
+.check-items {
+    margin: 1.5rem 0;
+}
+
+.check-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #333;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.check-item:hover {
+    background-color: #444;
+    border-color: #4CAF50;
+    transform: translateY(-2px);
+}
+
+.check-item.completed {
+    background-color: #2e7d32;
+    border-color: #4CAF50;
+}
+
+.check-item.completed:hover {
+    background-color: #388e3c;
+}
+
+.check-item-name {
+    font-weight: bold;
+    color: #fff;
+}
+
+.check-item-status {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: bold;
+    background-color: #666;
+    color: #fff;
+}
+
+.check-item.completed .check-item-status {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+/* 기존 check-option 스타일 제거됨 - 단순 클릭 방식으로 변경 */
+
+/* 모달 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: #2b2b2b;
+    border-radius: 8px;
+    border: 2px solid #4CAF50;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #555;
+}
+
+.modal-header h2 {
+    color: #64b5f6;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: #f44336;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid #555;
+}
+
+.file-input-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.file-name {
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.status-indicator {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.status-indicator.connected {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+.status-indicator.disconnected {
+    background-color: #f44336;
+    color: #fff;
+}
+
+.status-indicator.checking {
+    background-color: #ff9800;
+    color: #fff;
+}
+
+/* 버튼 */
+.btn-primary {
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #45a049;
+}
+
+.btn-secondary {
+    background-color: #666;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #777;
+}
+
+/* 이력 화면 */
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.history-item {
+    padding: 1rem;
+    background-color: #333;
+    border-radius: 8px;
+    border-left: 4px solid #4CAF50;
+}
+
+.history-date {
+    font-weight: bold;
+    color: #64b5f6;
+    margin-bottom: 0.5rem;
+}
+
+.history-details {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* 설정 화면 */
+.settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #333;
+    border-radius: 8px;
+}
+
+.status-indicator {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.status-indicator.connected {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+.status-indicator.disconnected {
+    background-color: #f44336;
+    color: #fff;
+}
+
+/* 로그인 화면 */
+.login-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #1a1a1a;
+}
+
+.login-form {
+    background-color: #2b2b2b;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 2px solid #4CAF50;
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-form h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #64b5f6;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .app-header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .app-header h1 {
+        font-size: 1.2rem;
+    }
+    
+    /* 모바일에서 사이드바 토글 버튼 표시 */
+    .sidebar-toggle {
+        display: block;
+    }
+    
+    .main-content {
+        padding: 1rem;
+        width: 100%; /* 모바일에서 전체 너비 차지 */
+    }
+    
+    /* 모바일에서 로고 크기 조정 */
+    .company-logo {
+        max-width: 300px; /* 200px → 300px (1.5배 확대) */
+        max-height: 165px; /* 110px → 165px (1.5배 확대) */
+        filter: 
+            drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))
+            brightness(1.1) 
+            contrast(1.05)
+            sepia(0.1); /* 모바일에서도 동일한 필터 적용 */
+        background: linear-gradient(135deg, #2b2b2b 0%, #1a1a1a 100%);
+        border-radius: 6px;
+        padding: 0.4rem;
+    }
+    
+    /* 모바일에서 로고 컨테이너 조정 */
+    .logo-container {
+        background: rgba(43, 43, 43, 0.4);
+        padding: 0.8rem;
+        border-radius: 10px;
+        border: none; /* 모바일에서도 테두리 제거 */
+    }
+    
+    /* 모바일에서 사이드바가 숨겨졌을 때 메인 콘텐츠 확장 */
+    .sidebar.hidden + .main-content {
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    .type-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .equipment-items {
+        grid-template-columns: 1fr;
+    }
+    
+    .check-item {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .check-item-options {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* 오프라인 모드 스타일 */
+.offline-indicator {
+    background-color: #ff9800;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 1rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.offline-info {
+    background-color: #333;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    border-left: 4px solid #ff9800;
+}
+
+.offline-info h4 {
+    color: #ff9800;
+    margin-bottom: 0.5rem;
+}
+
+.offline-info p {
+    color: #ccc;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* PWA 스타일 */
+@media (display-mode: standalone) {
+    .app-header {
+        padding-top: env(safe-area-inset-top);
+    }
+    
+    .main-content {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
