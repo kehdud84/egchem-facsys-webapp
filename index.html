@@ -442,12 +442,68 @@
             제조파트
         </button>
         
+        <button class="btn-secondary" onclick="openEquipmentManagement()">
+            장비 관리
+        </button>
+        
         <button class="btn-secondary" onclick="openConnectionSettings()">
             연결 설정
         </button>
         
         <div id="success-message" class="success-message" style="display: none;">
             ✅ 웹앱이 정상적으로 로드되었습니다!
+        </div>
+    </div>
+    
+    <!-- 장비 관리 화면 -->
+    <div id="equipment-management-screen" class="inspection-screen">
+        <button class="back-button" onclick="goBackToMain()">← 메인 화면</button>
+        
+        <div class="inspection-step">
+            <h2>🔧 장비 관리</h2>
+            
+            <!-- 장비 추가 폼 -->
+            <div class="form-group">
+                <label>점검 유형:</label>
+                <select id="equipment-type-select" style="width: 100%; padding: 0.75rem; background-color: #333; border: 1px solid #555; border-radius: 4px; color: #fff; font-size: 1rem;">
+                    <option value="일일점검">일일점검</option>
+                    <option value="주간점검">주간점검</option>
+                    <option value="월간점검">월간점검</option>
+                    <option value="분기점검">분기점검</option>
+                    <option value="반기점검">반기점검</option>
+                    <option value="연간점검">연간점검</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>장비명:</label>
+                <input type="text" id="new-equipment-name" placeholder="예: VP-001, 펌프-001 등">
+            </div>
+            
+            <div class="form-group">
+                <label>상태:</label>
+                <select id="equipment-status-select" style="width: 100%; padding: 0.75rem; background-color: #333; border: 1px solid #555; border-radius: 4px; color: #fff; font-size: 1rem;">
+                    <option value="normal">정상</option>
+                    <option value="warning">점검필요</option>
+                    <option value="alarm">알람</option>
+                    <option value="maintenance">정비중</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>설명 (선택사항):</label>
+                <input type="text" id="equipment-description" placeholder="장비에 대한 추가 설명">
+            </div>
+            
+            <button class="btn-primary" onclick="addEquipment()" style="width: 100%; margin-bottom: 1rem;">
+                장비 추가
+            </button>
+            
+            <!-- 장비 목록 -->
+            <div id="equipment-list-container">
+                <h3 style="color: #64b5f6; margin-bottom: 1rem;">현재 장비 목록</h3>
+                <div id="equipment-list"></div>
+            </div>
         </div>
     </div>
     
@@ -741,6 +797,281 @@
         
         let currentStep = 'type';
         
+        // 장비 관리 클래스
+        class EquipmentManager {
+            constructor() {
+                this.maxEquipment = 100;
+                this.equipmentData = this.loadEquipmentData();
+            }
+            
+            loadEquipmentData() {
+                const saved = localStorage.getItem('equipment_data');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                
+                // 기본 장비 데이터
+                return {
+                    '일일점검': [
+                        { name: 'VP-001', status: 'normal', statusText: '정상', description: '' },
+                        { name: 'VP-002', status: 'warning', statusText: '점검필요', description: '' }
+                    ],
+                    '주간점검': [
+                        { name: 'VP-001', status: 'normal', statusText: '정상', description: '' },
+                        { name: 'VP-002', status: 'warning', statusText: '점검필요', description: '' },
+                        { name: 'VP-003', status: 'normal', statusText: '정상', description: '' },
+                        { name: 'VP-004', status: 'alarm', statusText: '알람', description: '' }
+                    ],
+                    '월간점검': [
+                        { name: 'VP-001', status: 'normal', statusText: '정상', description: '' },
+                        { name: 'VP-002', status: 'warning', statusText: '점검필요', description: '' },
+                        { name: 'VP-003', status: 'normal', statusText: '정상', description: '' }
+                    ],
+                    '분기점검': [
+                        { name: 'VP-001', status: 'normal', statusText: '정상', description: '' }
+                    ],
+                    '반기점검': [
+                        { name: 'VP-001', status: 'normal', statusText: '정상', description: '' }
+                    ],
+                    '연간점검': [
+                        { name: 'VP-001', status: 'normal', statusText: '정상', description: '' }
+                    ]
+                };
+            }
+            
+            saveEquipmentData() {
+                localStorage.setItem('equipment_data', JSON.stringify(this.equipmentData));
+            }
+            
+            addEquipment(type, name, status, description = '') {
+                if (!this.equipmentData[type]) {
+                    this.equipmentData[type] = [];
+                }
+                
+                // 최대 개수 확인
+                if (this.equipmentData[type].length >= this.maxEquipment) {
+                    throw new Error(`최대 ${this.maxEquipment}개까지만 추가할 수 있습니다.`);
+                }
+                
+                // 중복 확인
+                if (this.equipmentData[type].some(eq => eq.name === name)) {
+                    throw new Error('이미 존재하는 장비명입니다.');
+                }
+                
+                const statusText = this.getStatusText(status);
+                const newEquipment = {
+                    name: name,
+                    status: status,
+                    statusText: statusText,
+                    description: description
+                };
+                
+                this.equipmentData[type].push(newEquipment);
+                this.saveEquipmentData();
+                return newEquipment;
+            }
+            
+            updateEquipment(type, oldName, newName, status, description = '') {
+                const equipment = this.equipmentData[type].find(eq => eq.name === oldName);
+                if (!equipment) {
+                    throw new Error('장비를 찾을 수 없습니다.');
+                }
+                
+                // 이름이 변경된 경우 중복 확인
+                if (oldName !== newName && this.equipmentData[type].some(eq => eq.name === newName)) {
+                    throw new Error('이미 존재하는 장비명입니다.');
+                }
+                
+                equipment.name = newName;
+                equipment.status = status;
+                equipment.statusText = this.getStatusText(status);
+                equipment.description = description;
+                
+                this.saveEquipmentData();
+                return equipment;
+            }
+            
+            deleteEquipment(type, name) {
+                const index = this.equipmentData[type].findIndex(eq => eq.name === name);
+                if (index === -1) {
+                    throw new Error('장비를 찾을 수 없습니다.');
+                }
+                
+                this.equipmentData[type].splice(index, 1);
+                this.saveEquipmentData();
+            }
+            
+            getStatusText(status) {
+                const statusMap = {
+                    'normal': '정상',
+                    'warning': '점검필요',
+                    'alarm': '알람',
+                    'maintenance': '정비중'
+                };
+                return statusMap[status] || '알 수 없음';
+            }
+            
+            getTotalEquipmentCount() {
+                let total = 0;
+                for (const type in this.equipmentData) {
+                    total += this.equipmentData[type].length;
+                }
+                return total;
+            }
+        }
+        
+        // 전역 장비 관리자 인스턴스
+        const equipmentManager = new EquipmentManager();
+        
+        // 장비 관리 화면 열기
+        function openEquipmentManagement() {
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('equipment-management-screen').style.display = 'block';
+            document.getElementById('equipment-management-screen').classList.add('active');
+            
+            // 장비 목록 새로고침
+            refreshEquipmentList();
+        }
+        
+        // 장비 추가
+        function addEquipment() {
+            const type = document.getElementById('equipment-type-select').value;
+            const name = document.getElementById('new-equipment-name').value.trim();
+            const status = document.getElementById('equipment-status-select').value;
+            const description = document.getElementById('equipment-description').value.trim();
+            
+            if (!name) {
+                alert('장비명을 입력해주세요.');
+                return;
+            }
+            
+            try {
+                equipmentManager.addEquipment(type, name, status, description);
+                
+                // 폼 초기화
+                document.getElementById('new-equipment-name').value = '';
+                document.getElementById('equipment-description').value = '';
+                
+                // 장비 목록 새로고침
+                refreshEquipmentList();
+                
+                alert(`✅ ${name} 장비가 ${type}에 추가되었습니다!`);
+            } catch (error) {
+                alert('❌ 오류: ' + error.message);
+            }
+        }
+        
+        // 장비 목록 새로고침
+        function refreshEquipmentList() {
+            const container = document.getElementById('equipment-list');
+            container.innerHTML = '';
+            
+            const totalCount = equipmentManager.getTotalEquipmentCount();
+            
+            // 총 개수 표시
+            const countDiv = document.createElement('div');
+            countDiv.style.cssText = 'background-color: #333; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center;';
+            countDiv.innerHTML = `<strong>총 ${totalCount}개 장비 등록됨 (최대 100개)</strong>`;
+            container.appendChild(countDiv);
+            
+            // 점검 유형별로 장비 목록 표시
+            for (const type in equipmentManager.equipmentData) {
+                const equipmentList = equipmentManager.equipmentData[type];
+                
+                if (equipmentList.length > 0) {
+                    const typeDiv = document.createElement('div');
+                    typeDiv.style.cssText = 'margin-bottom: 2rem;';
+                    
+                    const typeHeader = document.createElement('h4');
+                    typeHeader.style.cssText = 'color: #64b5f6; margin-bottom: 1rem; border-bottom: 2px solid #4CAF50; padding-bottom: 0.5rem;';
+                    typeHeader.textContent = `${type} (${equipmentList.length}개)`;
+                    typeDiv.appendChild(typeHeader);
+                    
+                    equipmentList.forEach(equipment => {
+                        const equipmentDiv = document.createElement('div');
+                        equipmentDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #333; border-radius: 8px; margin-bottom: 0.5rem; border-left: 4px solid #4CAF50;';
+                        
+                        const equipmentInfo = document.createElement('div');
+                        equipmentInfo.innerHTML = `
+                            <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.25rem;">${equipment.name}</div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">${equipment.statusText}</div>
+                            ${equipment.description ? `<div style="font-size: 0.8rem; opacity: 0.6; margin-top: 0.25rem;">${equipment.description}</div>` : ''}
+                        `;
+                        
+                        const actionButtons = document.createElement('div');
+                        actionButtons.style.cssText = 'display: flex; gap: 0.5rem;';
+                        
+                        const editBtn = document.createElement('button');
+                        editBtn.textContent = '수정';
+                        editBtn.style.cssText = 'background-color: #2196F3; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;';
+                        editBtn.onclick = () => editEquipment(type, equipment.name);
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = '삭제';
+                        deleteBtn.style.cssText = 'background-color: #f44336; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;';
+                        deleteBtn.onclick = () => deleteEquipment(type, equipment.name);
+                        
+                        actionButtons.appendChild(editBtn);
+                        actionButtons.appendChild(deleteBtn);
+                        
+                        equipmentDiv.appendChild(equipmentInfo);
+                        equipmentDiv.appendChild(actionButtons);
+                        typeDiv.appendChild(equipmentDiv);
+                    });
+                    
+                    container.appendChild(typeDiv);
+                }
+            }
+        }
+        
+        // 장비 수정
+        function editEquipment(type, oldName) {
+            const equipment = equipmentManager.equipmentData[type].find(eq => eq.name === oldName);
+            if (!equipment) return;
+            
+            const newName = prompt('장비명을 수정하세요:', equipment.name);
+            if (!newName || newName.trim() === '') return;
+            
+            const statusOptions = ['normal', 'warning', 'alarm', 'maintenance'];
+            const statusTexts = ['정상', '점검필요', '알람', '정비중'];
+            const currentStatusIndex = statusOptions.indexOf(equipment.status);
+            
+            const statusText = prompt(`상태를 선택하세요:\n1. 정상\n2. 점검필요\n3. 알람\n4. 정비중\n\n현재: ${equipment.statusText}\n번호를 입력하세요:`, currentStatusIndex + 1);
+            
+            if (!statusText) return;
+            
+            const statusIndex = parseInt(statusText) - 1;
+            if (statusIndex < 0 || statusIndex >= statusOptions.length) {
+                alert('올바른 번호를 입력해주세요.');
+                return;
+            }
+            
+            const description = prompt('설명을 수정하세요 (선택사항):', equipment.description || '');
+            
+            try {
+                equipmentManager.updateEquipment(type, oldName, newName.trim(), statusOptions[statusIndex], description || '');
+                refreshEquipmentList();
+                alert('✅ 장비 정보가 수정되었습니다!');
+            } catch (error) {
+                alert('❌ 오류: ' + error.message);
+            }
+        }
+        
+        // 장비 삭제
+        function deleteEquipment(type, name) {
+            if (!confirm(`정말로 "${name}" 장비를 삭제하시겠습니까?`)) {
+                return;
+            }
+            
+            try {
+                equipmentManager.deleteEquipment(type, name);
+                refreshEquipmentList();
+                alert('✅ 장비가 삭제되었습니다!');
+            } catch (error) {
+                alert('❌ 오류: ' + error.message);
+            }
+        }
+        
         // 연결 설정 모달 열기
         function openConnectionSettings() {
             document.getElementById('connection-modal').style.display = 'flex';
@@ -911,36 +1242,9 @@
             });
         }
         
-        // 점검 유형별 장비 목록
+        // 점검 유형별 장비 목록 (새로운 장비 관리자 사용)
         function getEquipmentForType(type) {
-            const equipmentData = {
-                '일일점검': [
-                    { name: 'VP-001', status: 'normal', statusText: '정상' },
-                    { name: 'VP-002', status: 'warning', statusText: '점검필요' }
-                ],
-                '주간점검': [
-                    { name: 'VP-001', status: 'normal', statusText: '정상' },
-                    { name: 'VP-002', status: 'warning', statusText: '점검필요' },
-                    { name: 'VP-003', status: 'normal', statusText: '정상' },
-                    { name: 'VP-004', status: 'alarm', statusText: '알람' }
-                ],
-                '월간점검': [
-                    { name: 'VP-001', status: 'normal', statusText: '정상' },
-                    { name: 'VP-002', status: 'warning', statusText: '점검필요' },
-                    { name: 'VP-003', status: 'normal', statusText: '정상' }
-                ],
-                '분기점검': [
-                    { name: 'VP-001', status: 'normal', statusText: '정상' }
-                ],
-                '반기점검': [
-                    { name: 'VP-001', status: 'normal', statusText: '정상' }
-                ],
-                '연간점검': [
-                    { name: 'VP-001', status: 'normal', statusText: '정상' }
-                ]
-            };
-            
-            return equipmentData[type] || [];
+            return equipmentManager.equipmentData[type] || [];
         }
         
         // 위치 선택
