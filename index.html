@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EGChem FACSYS 점검 시스템</title>
+    <meta name="theme-color" content="#2b2b2b">
+    <meta name="description" content="EGChem FACSYS 설비 및 장비 점검 관리 시스템">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        
+        .main-container {
+            text-align: center;
+            background-color: #2b2b2b;
+            padding: 3rem;
+            border-radius: 12px;
+            border: 2px solid #4CAF50;
+            max-width: 500px;
+            width: 100%;
+            margin: 2rem auto;
+        }
+        
+        .main-container h1 {
+            color: #64b5f6;
+            font-size: 1.7rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+        }
+        
+        .main-button {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 2rem 4rem;
+            border-radius: 12px;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            margin: 2rem 0;
+        }
+        
+        .main-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        
+        .btn-secondary {
+            background-color: #666;
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            margin: 1rem 0;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #777;
+        }
+        
+        .btn-primary {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+        
+        /* 점검 화면 스타일 */
+        .inspection-screen {
+            display: none;
+            min-height: 100vh;
+            background-color: #1a1a1a;
+            padding: 2rem;
+        }
+        
+        .inspection-screen.active {
+            display: block;
+        }
+        
+        .back-button {
+            background-color: #FF6B35;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        
+        .back-button:hover {
+            background-color: #e55a2b;
+        }
+        
+        .inspection-step {
+            background-color: #2b2b2b;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 2px solid #4CAF50;
+            margin-bottom: 2rem;
+        }
+        
+        .inspection-step h2 {
+            color: #64b5f6;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        /* 점검 유형 선택 */
+        .type-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .type-btn {
+            padding: 1rem;
+            background-color: #3a3a3a;
+            color: #fff;
+            border: 2px solid #555;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .type-btn:hover {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+        }
+        
+        .type-btn.selected {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        
+        /* 장비 선택 */
+        .equipment-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .equipment-item {
+            padding: 1rem;
+            background-color: #333;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .equipment-item:hover {
+            background-color: #444;
+        }
+        
+        .equipment-item.selected {
+            background-color: #4CAF50;
+            border-left-color: #4CAF50;
+        }
+        
+        .equipment-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .equipment-status {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        /* 장비 관리 버튼들 */
+        .equipment-management {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid #555;
+        }
+        
+        .step-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .success-message {
+            background-color: #2e7d32;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .status-indicator {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        
+        .status-indicator.connected {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+        
+        .status-indicator.disconnected {
+            background-color: #f44336;
+            color: #fff;
+        }
+        
+        /* 모달 스타일 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: #2b2b2b;
+            border-radius: 8px;
+            border: 2px solid #4CAF50;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #555;
+        }
+        
+        .modal-header h2 {
+            color: #64b5f6;
+            margin: 0;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-btn:hover {
+            color: #f44336;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-top: 1px solid #555;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            .main-button {
+                padding: 1.5rem 3rem;
+                font-size: 1.5rem;
+            }
+            
+            .type-buttons, .equipment-items {
+                grid-template-columns: 1fr;
+            }
+            
+            .equipment-management {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 메인 화면 -->
+    <div id="main-screen" class="main-container">
+        <h1>FACSYS<br>설비 및 장비 점검 시스템</h1>
+        
+        <div class="status-indicator disconnected" id="connection-status">
+            ❌ 연결 안됨
+        </div>
+        
+        <button class="main-button" onclick="openInspection()">
+            1-A 시트
+        </button>
+        
+        <div style="margin-top: 1rem;">
+        <button class="btn-secondary" onclick="openConnectionSettings()">
+            연결 설정
+        </button>
+        </div>
+        
+        <div id="success-message" class="success-message" style="display: none;">
+            ✅ 웹앱이 정상적으로 로드되었습니다!
+        </div>
+    </div>
+    
+    <!-- 점검 화면 -->
+    <div id="inspection-screen" class="inspection-screen">
+        <button class="back-button" onclick="goBackToMain()">← 메인 화면</button>
+        
+        <!-- 단계 1: 점검 유형 선택 -->
+        <div id="step-type" class="inspection-step">
+            <h2>점검 유형 선택</h2>
+            <div class="type-buttons">
+                <button class="type-btn" data-type="일일점검" onclick="selectInspectionType('일일점검')">일일점검</button>
+                <button class="type-btn" data-type="주간점검" onclick="selectInspectionType('주간점검')">주간점검</button>
+                <button class="type-btn" data-type="월간점검" onclick="selectInspectionType('월간점검')">월간점검</button>
+                <button class="type-btn" data-type="분기점검" onclick="selectInspectionType('분기점검')">분기점검</button>
+                <button class="type-btn" data-type="반기점검" onclick="selectInspectionType('반기점검')">반기점검</button>
+                <button class="type-btn" data-type="연간점검" onclick="selectInspectionType('연간점검')">연간점검</button>
+            </div>
+            <div class="step-buttons">
+                <div></div>
+                <button type="button" class="btn-primary" onclick="nextStep('equipment')">다음</button>
+            </div>
+        </div>
+        
+        <!-- 단계 2: 장비 선택 -->
+        <div id="step-equipment" class="inspection-step" style="display: none;">
+            <h2>장비 선택</h2>
+            <div id="equipment-items" class="equipment-items"></div>
+            
+            <!-- 장비 관리 버튼들 -->
+            <div class="equipment-management">
+                <button class="btn-secondary" onclick="addEquipment()">
+                    장비 추가
+                </button>
+                <button class="btn-secondary" onclick="deleteEquipment()">
+                    장비 삭제
+                </button>
+            </div>
+            
+            <div class="step-buttons">
+                <button type="button" class="btn-secondary" onclick="prevStep('type')">이전</button>
+                <button type="button" class="btn-primary" onclick="nextStep('inspector')">다음</button>
+            </div>
+        </div>
+        
+        <!-- 단계 3: 점검자 이름 입력 -->
+        <div id="step-inspector" class="inspection-step" style="display: none;">
+            <h2>점검자 이름 입력</h2>
+            <div style="margin: 2rem 0;">
+                <input type="text" id="inspector-name" placeholder="점검자 이름을 입력하세요" 
+                       style="width: 100%; padding: 1rem; font-size: 1.2rem; border-radius: 8px; border: 2px solid #555; background-color: #333; color: #fff;">
+            </div>
+            <div class="step-buttons">
+                <button type="button" class="btn-secondary" onclick="prevStep('equipment')">이전</button>
+                <button type="button" class="btn-primary" onclick="nextStep('location')">다음</button>
+            </div>
+        </div>
+        
+        <!-- 단계 4: 설치위치 선택 -->
+        <div id="step-location" class="inspection-step" style="display: none;">
+            <h2>설치위치 선택</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin: 2rem 0;">
+                <button class="type-btn" data-location="3동" onclick="selectLocation('3동')">3동</button>
+                <button class="type-btn" data-location="정제실1" onclick="selectLocation('정제실1')">정제실1</button>
+                <button class="type-btn" data-location="정제실2" onclick="selectLocation('정제실2')">정제실2</button>
+                <button class="type-btn" data-location="창고" onclick="selectLocation('창고')">창고</button>
+                <button class="type-btn" data-location="기타" onclick="selectLocation('기타')">기타</button>
+            </div>
+            <div class="step-buttons">
+                <button type="button" class="btn-secondary" onclick="prevStep('inspector')">이전</button>
+                <button type="button" class="btn-primary" onclick="nextStep('inspection')">다음</button>
+            </div>
+        </div>
+        
+        <!-- 단계 5: 점검 내용 선택 -->
+        <div id="step-inspection" class="inspection-step" style="display: none;">
+            <h2>점검 내용 선택</h2>
+            <div id="check-items" style="margin: 2rem 0;"></div>
+            
+            <!-- 점검 항목 관리 버튼들 -->
+            <div class="equipment-management">
+                <button class="btn-secondary" onclick="addInspectionItem()">
+                    점검항목 추가
+                </button>
+                <button class="btn-secondary" onclick="deleteInspectionItem()">
+                    점검항목 삭제
+                </button>
+            </div>
+            
+            <div class="step-buttons">
+                <button type="button" class="btn-secondary" onclick="prevStep('location')">이전</button>
+                <button type="button" class="btn-primary" onclick="nextStep('notes')">다음</button>
+            </div>
+        </div>
+        
+        <!-- 단계 6: 특이사항 입력 및 완료 -->
+        <div id="step-notes" class="inspection-step" style="display: none;">
+            <h2>특이사항 입력</h2>
+            <div style="margin: 2rem 0;">
+                <textarea id="notes" rows="4" placeholder="특이사항을 입력하세요 (선택사항)" 
+                          style="width: 100%; padding: 1rem; font-size: 1rem; border-radius: 8px; border: 2px solid #555; background-color: #333; color: #fff; resize: vertical;"></textarea>
+            </div>
+            <div class="step-buttons">
+                <button type="button" class="btn-secondary" onclick="prevStep('inspection')">이전</button>
+                <button type="button" class="btn-primary" onclick="submitInspection()">점검 완료</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 연결 설정 모달 -->
+    <div id="connection-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔧 구글 시트 연결 설정</h2>
+                <button class="close-btn" onclick="closeConnectionSettings()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Google Apps Script 웹앱 URL:</label>
+                    <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/.../exec">
+                </div>
+                <div class="form-group">
+                    <label>스프레드시트 ID:</label>
+                    <input type="text" id="spreadsheet-id" value="1QjU-kQDRgDrZ5tUn6awJhRWWx9u0Mt4uLCFmkOqLNcQ" readonly>
+                </div>
+                <div class="form-group">
+                    <label>연결 상태:</label>
+                    <span id="modal-connection-status" class="status-indicator disconnected">연결 안됨</span>
+                </div>
+                <div class="form-group">
+                    <label>디버그 정보:</label>
+                    <div id="debug-info" style="background-color: #333; padding: 1rem; border-radius: 4px; font-size: 0.9rem; color: #ccc;">
+                        연결 테스트를 실행하면 여기에 상세 정보가 표시됩니다.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeConnectionSettings()">취소</button>
+                <button class="btn-primary" onclick="testConnection()">연결 테스트</button>
+                <button class="btn-primary" onclick="saveConnectionSettings()">저장</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        console.log('✅ EGChem FACSYS 웹앱 로드 완료!');
+        
+        // 구글 시트 연동 클래스
+        class GoogleSheetsManager {
+            constructor() {
+                this.isConnected = false;
+                this.webAppUrl = '';
+                this.init();
+            }
+            
+            init() {
+                const savedUrl = localStorage.getItem('google_webapp_url');
+                if (savedUrl) {
+                    this.webAppUrl = savedUrl;
+                    document.getElementById('webapp-url').value = savedUrl;
+                    this.updateConnectionStatus(true);
+                }
+            }
+            
+            setWebAppUrl(url) {
+                this.webAppUrl = url;
+            }
+            
+            async testConnection() {
+                if (!this.webAppUrl) {
+                    throw new Error('웹앱 URL이 설정되지 않았습니다.');
+                }
+                
+                return new Promise((resolve, reject) => {
+                    const callbackName = `callback_${Date.now()}`;
+                    
+                    window[callbackName] = (result) => {
+                        if (script.parentNode) {
+                            document.head.removeChild(script);
+                        }
+                        delete window[callbackName];
+                        
+                        console.log('연결 테스트 결과:', result);
+                        
+                        if (result && result.success) {
+                            this.isConnected = true;
+                            resolve(true);
+                        } else {
+                            reject(new Error(result?.error || '연결 실패'));
+                        }
+                    };
+                    
+                    const script = document.createElement('script');
+                    const params = new URLSearchParams({
+                        callback: callbackName,
+                        action: 'testConnection'
+                    });
+                    
+                    script.src = `${this.webAppUrl}?${params.toString()}`;
+                    script.onerror = () => {
+                        if (script.parentNode) {
+                            document.head.removeChild(script);
+                        }
+                        delete window[callbackName];
+                        reject(new Error('웹앱 URL을 확인해주세요.'));
+                    };
+                    
+                    document.head.appendChild(script);
+                });
+            }
+            
+            async addInspectionData(inspectionData) {
+                if (!this.webAppUrl) {
+                    throw new Error('웹앱 URL이 설정되지 않았습니다.');
+                }
+                
+                const sheetName = "1-A";
+                const rowData = this.formatInspectionDataForSheet(inspectionData);
+                
+                return new Promise((resolve, reject) => {
+                    const callbackName = `callback_${Date.now()}`;
+                    
+                    window[callbackName] = (result) => {
+                        if (script.parentNode) {
+                            document.head.removeChild(script);
+                        }
+                        delete window[callbackName];
+                        
+                        console.log('데이터 저장 결과:', result);
+                        console.log('저장된 데이터:', rowData[0]);
+                        
+                        if (result && result.success) {
+                            resolve(true);
+                        } else {
+                            reject(new Error(result?.error || '데이터 저장 실패'));
+                        }
+                    };
+                    
+                    const script = document.createElement('script');
+                    const params = new URLSearchParams({
+                        callback: callbackName,
+                        action: 'addInspectionData',
+                        sheetName: sheetName,
+                        data: JSON.stringify(rowData[0])
+                    });
+                    
+                    script.src = `${this.webAppUrl}?${params.toString()}`;
+                    script.onerror = () => {
+                        if (script.parentNode) {
+                            document.head.removeChild(script);
+                        }
+                        delete window[callbackName];
+                        reject(new Error('데이터 저장 실패'));
+                    };
+                    
+                    document.head.appendChild(script);
+                });
+            }
+            
+            formatInspectionDataForSheet(inspectionData) {
+                const now = new Date();
+                const koreanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+                const dateStr = koreanTime.toISOString().split('T')[0];
+                const inspectionType = inspectionData.type || '일일점검';
+                const equipmentName = inspectionData.equipment;
+                const location = inspectionData.location || '';
+                const inspectorName = inspectionData.inspector;
+                
+                // 점검 내용을 문자열로 변환
+                let checkContent = '';
+                if (inspectionData.inspections && Array.isArray(inspectionData.inspections)) {
+                    checkContent = inspectionData.inspections.map(item => 
+                        typeof item === 'object' ? `${item.item}: ${item.result}` : item
+                    ).join(', ');
+                } else if (inspectionData.inspections) {
+                    checkContent = String(inspectionData.inspections);
+                }
+                
+                const notes = inspectionData.notes || '';
+                
+                console.log('저장할 데이터:', {
+                    dateStr,
+                    inspectionType,
+                    equipmentName,
+                    location,
+                    inspectorName,
+                    checkContent,
+                    notes
+                });
+                
+                const row = [
+                    dateStr,           // A: 날짜
+                    inspectionType,    // B: 점검 유형
+                    equipmentName,     // C: 장비명
+                    location,          // D: 설치위치
+                    inspectorName,     // E: 점검자
+                    checkContent,      // F: 점검내용
+                    notes              // G: 특이사항
+                ];
+                
+                return [row];
+            }
+            
+            updateConnectionStatus(connected) {
+                const statusElement = document.getElementById('connection-status');
+                const modalStatusElement = document.getElementById('modal-connection-status');
+                
+                if (connected) {
+                    statusElement.textContent = '✅ 연결됨';
+                    statusElement.className = 'status-indicator connected';
+                    modalStatusElement.textContent = '연결됨';
+                    modalStatusElement.className = 'status-indicator connected';
+                } else {
+                    statusElement.textContent = '❌ 연결 안됨';
+                    statusElement.className = 'status-indicator disconnected';
+                    modalStatusElement.textContent = '연결 안됨';
+                    modalStatusElement.className = 'status-indicator disconnected';
+                }
+            }
+        }
+        
+        // 전역 인스턴스 생성
+        const googleSheetsManager = new GoogleSheetsManager();
+        
+        // 점검 항목 관리 클래스
+        class InspectionItemsManager {
+            constructor() {
+                this.maxItems = 50;
+                this.inspectionItems = this.loadInspectionItems();
+            }
+            
+            loadInspectionItems() {
+                const saved = localStorage.getItem('inspection_items');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                
+                // 기본 점검 항목 데이터
+                return {
+                    '일일점검': ['오일교체', '누유점검', '모터점검', '외부수리'],
+                    '주간점검': ['전체점검', '정밀점검', '교체점검', '예방정비'],
+                    '월간점검': ['종합점검', '성능점검', '안전점검', '정기교체'],
+                    '분기점검': ['전면점검', '부품교체', '성능측정', '안전확인'],
+                    '반기점검': ['대점검', '주요부품교체', '성능개선', '안전강화'],
+                    '연간점검': ['오버홀', '시설개선', '성능업그레이드', '안전시설점검']
+                };
+            }
+            
+            saveInspectionItems() {
+                localStorage.setItem('inspection_items', JSON.stringify(this.inspectionItems));
+            }
+            
+            addInspectionItem(type, itemName) {
+                if (!this.inspectionItems[type]) {
+                    this.inspectionItems[type] = [];
+                }
+                
+                if (this.inspectionItems[type].length >= this.maxItems) {
+                    throw new Error(`최대 ${this.maxItems}개까지만 추가할 수 있습니다.`);
+                }
+                
+                if (this.inspectionItems[type].includes(itemName)) {
+                    throw new Error('이미 존재하는 점검 항목입니다.');
+                }
+                
+                this.inspectionItems[type].push(itemName);
+                this.saveInspectionItems();
+                return true;
+            }
+            
+            deleteInspectionItem(type, itemName) {
+                if (!this.inspectionItems[type]) {
+                    throw new Error('해당 점검 유형을 찾을 수 없습니다.');
+                }
+                
+                const index = this.inspectionItems[type].indexOf(itemName);
+                if (index === -1) {
+                    throw new Error('해당 점검 항목을 찾을 수 없습니다.');
+                }
+                
+                this.inspectionItems[type].splice(index, 1);
+                this.saveInspectionItems();
+                return true;
+            }
+            
+            getInspectionItems(type) {
+                return this.inspectionItems[type] || [];
+            }
+        }
+        
+        // 전역 인스턴스 생성
+        const inspectionItemsManager = new InspectionItemsManager();
+        
+        // 점검 완료 시점 관리 클래스
+        class InspectionTimeManager {
+            constructor() {
+                this.inspectionTimes = this.loadInspectionTimes();
+            }
+            
+            loadInspectionTimes() {
+                const saved = localStorage.getItem('inspection_times');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                return {};
+            }
+            
+            saveInspectionTimes() {
+                localStorage.setItem('inspection_times', JSON.stringify(this.inspectionTimes));
+            }
+            
+            recordInspection(type, equipmentName) {
+                const now = new Date();
+                const key = `${type}_${equipmentName}`;
+                
+                this.inspectionTimes[key] = {
+                    lastInspection: now.toISOString(),
+                    type: type,
+                    equipment: equipmentName
+                };
+                
+                this.saveInspectionTimes();
+                console.log(`점검 완료 기록: ${type} - ${equipmentName} (${now.toLocaleString()})`);
+            }
+            
+            getLastInspectionTime(type, equipmentName) {
+                const key = `${type}_${equipmentName}`;
+                return this.inspectionTimes[key]?.lastInspection || null;
+            }
+            
+            calculateAlarmStatus(type, equipmentName) {
+                const lastInspection = this.getLastInspectionTime(type, equipmentName);
+                if (!lastInspection) {
+                    return 'unknown'; // 점검 이력 없음
+                }
+                
+                const lastDate = new Date(lastInspection);
+                const now = new Date();
+                const daysDiff = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+                
+                // 점검 유형별 주기
+                const cycles = {
+                    '일일점검': 1,
+                    '주간점검': 7,
+                    '월간점검': 30,
+                    '분기점검': 90,
+                    '반기점검': 180,
+                    '연간점검': 365
+                };
+                
+                const cycle = cycles[type] || 7;
+                const warningDays = 3; // 3일 전 경고
+                
+                if (daysDiff >= cycle) {
+                    return 'alarm'; // 기간 초과 - 빨간색
+                } else if (daysDiff >= cycle - warningDays) {
+                    return 'warning'; // 3일 전 경고 - 주황색
+                } else {
+                    return 'normal'; // 정상 - 초록색
+                }
+            }
+            
+            getAlarmStatusText(status) {
+                const statusMap = {
+                    'normal': '정상',
+                    'warning': '점검예정',
+                    'alarm': '점검필요',
+                    'unknown': '미점검'
+                };
+                return statusMap[status] || '알 수 없음';
+            }
+        }
+        
+        // 전역 인스턴스 생성
+        const inspectionTimeManager = new InspectionTimeManager();
+        
+        // 장비 관리 클래스 (점검 유형별)
+        class EquipmentManager {
+            constructor() {
+                this.maxEquipment = 100;
+                this.equipmentData = this.loadEquipmentData();
+            }
+            
+            loadEquipmentData() {
+                const saved = localStorage.getItem('equipment_data_by_type');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                
+                // 기본 장비 데이터 (점검 유형별)
+                return {
+                    '일일점검': [
+                        { name: 'VP-001', status: 'normal', statusText: '정상' },
+                        { name: 'VP-002', status: 'warning', statusText: '점검필요' }
+                    ],
+                    '주간점검': [
+                        { name: 'VP-003', status: 'normal', statusText: '정상' },
+                        { name: 'VP-004', status: 'alarm', statusText: '알람' }
+                    ],
+                    '월간점검': [
+                        { name: 'VP-001', status: 'normal', statusText: '정상' },
+                        { name: 'VP-005', status: 'warning', statusText: '점검필요' }
+                    ],
+                    '분기점검': [
+                        { name: 'VP-006', status: 'normal', statusText: '정상' },
+                        { name: 'VP-007', status: 'normal', statusText: '정상' }
+                    ],
+                    '반기점검': [
+                        { name: 'VP-008', status: 'normal', statusText: '정상' },
+                        { name: 'VP-009', status: 'warning', statusText: '점검필요' }
+                    ],
+                    '연간점검': [
+                        { name: 'VP-010', status: 'normal', statusText: '정상' },
+                        { name: 'VP-011', status: 'alarm', statusText: '알람' }
+                    ]
+                };
+            }
+            
+            saveEquipmentData() {
+                localStorage.setItem('equipment_data_by_type', JSON.stringify(this.equipmentData));
+            }
+            
+            addEquipment(type, name, status = 'normal') {
+                if (!this.equipmentData[type]) {
+                    this.equipmentData[type] = [];
+                }
+                
+                if (this.equipmentData[type].length >= this.maxEquipment) {
+                    throw new Error(`최대 ${this.maxEquipment}개까지만 추가할 수 있습니다.`);
+                }
+                
+                if (this.equipmentData[type].some(eq => eq.name === name)) {
+                    throw new Error('이미 존재하는 장비명입니다.');
+                }
+                
+                const statusText = this.getStatusText(status);
+                const newEquipment = {
+                    name: name,
+                    status: status,
+                    statusText: statusText
+                };
+                
+                this.equipmentData[type].push(newEquipment);
+                // 이름순으로 정렬
+                this.equipmentData[type].sort((a, b) => a.name.localeCompare(b.name));
+                this.saveEquipmentData();
+                return newEquipment;
+            }
+            
+            deleteEquipment(type, name) {
+                if (!this.equipmentData[type]) {
+                    throw new Error('해당 점검 유형을 찾을 수 없습니다.');
+                }
+                
+                const index = this.equipmentData[type].findIndex(eq => eq.name === name);
+                if (index === -1) {
+                    throw new Error('해당 장비를 찾을 수 없습니다.');
+                }
+                
+                this.equipmentData[type].splice(index, 1);
+                this.saveEquipmentData();
+                return true;
+            }
+            
+            getEquipmentByType(type) {
+                const equipmentList = this.equipmentData[type] || [];
+                // 이름순으로 정렬
+                return equipmentList.sort((a, b) => a.name.localeCompare(b.name));
+            }
+            
+            getStatusText(status) {
+                const statusMap = {
+                    'normal': '정상',
+                    'warning': '점검필요',
+                    'alarm': '알람',
+                    'maintenance': '정비중'
+                };
+                return statusMap[status] || '알 수 없음';
+            }
+        }
+        
+        // 전역 장비 관리자 인스턴스
+        const equipmentManager = new EquipmentManager();
+        
+        // 점검 데이터
+        let inspectionData = {
+            type: '',
+            equipment: '',
+            inspector: '',
+            location: '',
+            inspections: [],
+            notes: ''
+        };
+        
+        let currentStep = 'type';
+        
+        // 점검 화면 열기
+        function openInspection() {
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('inspection-screen').style.display = 'block';
+            document.getElementById('inspection-screen').classList.add('active');
+            
+            // 첫 번째 단계 표시
+            showStep('type');
+        }
+        
+        // 메인 화면으로 돌아가기
+        function goBackToMain() {
+            document.getElementById('inspection-screen').style.display = 'none';
+            document.getElementById('inspection-screen').classList.remove('active');
+            document.getElementById('main-screen').style.display = 'block';
+            
+            // 모든 단계 숨기기
+            document.querySelectorAll('.inspection-step').forEach(step => {
+                step.style.display = 'none';
+            });
+            
+            // 첫 번째 단계만 표시
+            document.getElementById('step-type').style.display = 'block';
+            currentStep = 'type';
+        }
+        
+        // 단계 표시
+        function showStep(stepName) {
+            // 모든 단계 숨기기
+            document.querySelectorAll('.inspection-step').forEach(step => {
+                step.style.display = 'none';
+            });
+            
+            // 선택된 단계 표시
+            const stepElement = document.getElementById(`step-${stepName}`);
+            if (stepElement) {
+                stepElement.style.display = 'block';
+                currentStep = stepName;
+                
+                // 장비 선택 단계인 경우 장비 목록 로드
+                if (stepName === 'equipment') {
+                    loadEquipmentList();
+                }
+                // 점검 내용 단계인 경우 점검 항목 로드
+                else if (stepName === 'inspection') {
+                    loadInspectionItems();
+                }
+            }
+        }
+        
+        // 다음 단계
+        function nextStep(nextStepName) {
+            // 현재 단계 데이터 저장
+            saveCurrentStepData();
+            
+            // 다음 단계로 이동
+            showStep(nextStepName);
+        }
+        
+        // 이전 단계
+        function prevStep(prevStepName) {
+            showStep(prevStepName);
+        }
+        
+        // 현재 단계 데이터 저장
+        function saveCurrentStepData() {
+            switch(currentStep) {
+                case 'inspector':
+                    inspectionData.inspector = document.getElementById('inspector-name').value.trim();
+                    break;
+                case 'notes':
+                    inspectionData.notes = document.getElementById('notes').value.trim();
+                    break;
+            }
+        }
+        
+        // 점검 유형 선택
+        function selectInspectionType(type) {
+            inspectionData.type = type;
+            
+            // 모든 점검 유형 버튼 초기화
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // 선택된 유형 하이라이트
+            event.target.classList.add('selected');
+            
+            console.log(`점검 유형 선택: ${type}`);
+            
+            // 다음 단계로 자동 이동
+            setTimeout(() => {
+                nextStep('equipment');
+            }, 500);
+        }
+        
+        // 장비 목록 로드 (점검 유형별 + 알람 상태)
+        function loadEquipmentList() {
+            const equipmentItems = document.getElementById('equipment-items');
+            equipmentItems.innerHTML = '';
+            
+            const equipmentList = equipmentManager.getEquipmentByType(inspectionData.type);
+            
+            equipmentList.forEach(equipment => {
+                // 알람 상태 계산
+                const alarmStatus = inspectionTimeManager.calculateAlarmStatus(inspectionData.type, equipment.name);
+                const alarmStatusText = inspectionTimeManager.getAlarmStatusText(alarmStatus);
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'equipment-item';
+                
+                // 알람 상태에 따른 색상 설정
+                let statusColor = '#666'; // 기본 회색
+                let borderColor = '#4CAF50'; // 기본 초록색 테두리
+                
+                switch(alarmStatus) {
+                    case 'normal':
+                        statusColor = '#4CAF50'; // 초록색
+                        borderColor = '#4CAF50';
+                        break;
+                    case 'warning':
+                        statusColor = '#FF9800'; // 주황색
+                        borderColor = '#FF9800';
+                        break;
+                    case 'alarm':
+                        statusColor = '#f44336'; // 빨간색
+                        borderColor = '#f44336';
+                        break;
+                    case 'unknown':
+                        statusColor = '#666'; // 회색
+                        borderColor = '#666';
+                        break;
+                }
+                
+                itemDiv.style.borderLeftColor = borderColor;
+                itemDiv.innerHTML = `
+                    <div class="equipment-name">${equipment.name}</div>
+                    <div class="equipment-status" style="color: ${statusColor}; font-weight: bold;">${alarmStatusText}</div>
+                `;
+                
+                itemDiv.addEventListener('click', () => {
+                    // 모든 장비 아이템 비활성화
+                    document.querySelectorAll('.equipment-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    
+                    // 선택된 장비 활성화
+                    itemDiv.classList.add('selected');
+                    
+                    // 장비 정보 저장
+                    inspectionData.equipment = equipment.name;
+                    
+                    console.log(`장비 선택: ${equipment.name} (${inspectionData.type}) - 상태: ${alarmStatusText}`);
+                });
+                
+                equipmentItems.appendChild(itemDiv);
+            });
+        }
+        
+        // 장비 추가 (점검 유형별)
+        function addEquipment() {
+            if (!inspectionData.type) {
+                alert('점검 유형을 먼저 선택해주세요.');
+                return;
+            }
+            
+            const name = prompt('장비명을 입력하세요:', '');
+            if (!name || name.trim() === '') return;
+            
+            try {
+                equipmentManager.addEquipment(inspectionData.type, name.trim());
+                loadEquipmentList(); // 장비 목록 새로고침
+                alert(`✅ ${name} 장비가 ${inspectionData.type}에 추가되었습니다!`);
+            } catch (error) {
+                alert('❌ 오류: ' + error.message);
+            }
+        }
+        
+        // 장비 삭제 (점검 유형별)
+        function deleteEquipment() {
+            if (!inspectionData.type) {
+                alert('점검 유형을 먼저 선택해주세요.');
+                return;
+            }
+            
+            const name = prompt('삭제할 장비명을 입력하세요:', '');
+            if (!name || name.trim() === '') return;
+            
+            if (!confirm(`정말로 "${name}" 장비를 ${inspectionData.type}에서 삭제하시겠습니까?`)) {
+                return;
+            }
+            
+            try {
+                equipmentManager.deleteEquipment(inspectionData.type, name.trim());
+                loadEquipmentList(); // 장비 목록 새로고침
+                alert(`✅ ${name} 장비가 ${inspectionData.type}에서 삭제되었습니다!`);
+            } catch (error) {
+                alert('❌ 오류: ' + error.message);
+            }
+        }
+        
+        // 위치 선택
+        function selectLocation(location) {
+            inspectionData.location = location;
+            
+            // 선택된 위치 하이라이트
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+            
+            console.log(`위치 선택: ${location}`);
+            
+            // 다음 단계로 자동 이동
+            setTimeout(() => {
+                nextStep('inspection');
+            }, 500);
+        }
+        
+        // 점검 항목 로드
+        function loadInspectionItems() {
+            const checkItems = document.getElementById('check-items');
+            checkItems.innerHTML = '';
+            
+            const items = inspectionItemsManager.getInspectionItems(inspectionData.type);
+            
+            items.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #333; border-radius: 8px; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent;';
+                itemDiv.innerHTML = `
+                    <div style="font-weight: bold; color: #fff;">${item}</div>
+                    <div style="padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; background-color: #666; color: #fff;">미점검</div>
+                `;
+                
+                // 점검 항목 클릭 이벤트
+                itemDiv.addEventListener('click', () => {
+                    if (itemDiv.classList.contains('completed')) {
+                        return;
+                    }
+                    
+                    // 점검 완료 처리
+                    itemDiv.classList.add('completed');
+                    itemDiv.style.backgroundColor = '#2e7d32';
+                    itemDiv.style.borderColor = '#4CAF50';
+                    itemDiv.querySelector('div:last-child').textContent = '점검완료';
+                    itemDiv.querySelector('div:last-child').style.backgroundColor = '#4CAF50';
+                    
+                    // 점검 결과 저장
+                    const existingResult = inspectionData.inspections.find(r => r.item === item);
+                    if (existingResult) {
+                        existingResult.result = '점검완료';
+                    } else {
+                        inspectionData.inspections.push({
+                            item: item,
+                            result: '점검완료'
+                        });
+                    }
+                    
+                    console.log(`점검 완료: ${item}`);
+                });
+                
+                checkItems.appendChild(itemDiv);
+            });
+        }
+        
+        // 점검 항목 추가
+        function addInspectionItem() {
+            if (!inspectionData.type) {
+                alert('점검 유형을 먼저 선택해주세요.');
+                return;
+            }
+            
+            const itemName = prompt('점검 항목명을 입력하세요:', '');
+            if (!itemName || itemName.trim() === '') return;
+            
+            try {
+                inspectionItemsManager.addInspectionItem(inspectionData.type, itemName.trim());
+                loadInspectionItems(); // 점검 항목 목록 새로고침
+                alert(`✅ ${itemName} 점검 항목이 추가되었습니다!`);
+            } catch (error) {
+                alert('❌ 오류: ' + error.message);
+            }
+        }
+        
+        // 점검 항목 삭제
+        function deleteInspectionItem() {
+            if (!inspectionData.type) {
+                alert('점검 유형을 먼저 선택해주세요.');
+                return;
+            }
+            
+            const itemName = prompt('삭제할 점검 항목명을 입력하세요:', '');
+            if (!itemName || itemName.trim() === '') return;
+            
+            if (!confirm(`정말로 "${itemName}" 점검 항목을 삭제하시겠습니까?`)) {
+                return;
+            }
+            
+            try {
+                inspectionItemsManager.deleteInspectionItem(inspectionData.type, itemName.trim());
+                loadInspectionItems(); // 점검 항목 목록 새로고침
+                alert(`✅ ${itemName} 점검 항목이 삭제되었습니다!`);
+            } catch (error) {
+                alert('❌ 오류: ' + error.message);
+            }
+        }
+        
+        
+        // 점검 완료
+        async function submitInspection() {
+            // 현재 단계 데이터 저장
+            saveCurrentStepData();
+            
+            // 데이터 검증
+            if (!inspectionData.type) {
+                alert('점검 유형을 선택해주세요.');
+                return;
+            }
+            
+            if (!inspectionData.equipment) {
+                alert('장비를 선택해주세요.');
+                return;
+            }
+            
+            if (!inspectionData.inspector) {
+                alert('점검자 이름을 입력해주세요.');
+                return;
+            }
+            
+            if (!inspectionData.location) {
+                alert('설치위치를 선택해주세요.');
+                return;
+            }
+            
+            if (inspectionData.inspections.length === 0) {
+                alert('점검 내용을 선택해주세요.');
+                return;
+            }
+            
+            // 구글 시트에 데이터 저장 시도
+            let saveResult = '';
+            try {
+                    await googleSheetsManager.addInspectionData(inspectionData);
+                saveResult = '\n✅ 구글 시트에 저장되었습니다!';
+            } catch (error) {
+                console.error('구글 시트 저장 실패:', error);
+                saveResult = `\n⚠️ 구글 시트 저장 실패: ${error.message}\n로컬에만 저장되었습니다.`;
+            }
+            
+            // 로컬 스토리지에 점검 완료 시점 저장 (알람용)
+            inspectionTimeManager.recordInspection(inspectionData.type, inspectionData.equipment);
+            
+            // 점검 완료 메시지
+            alert('✅ 점검이 완료되었습니다!\n\n점검 결과:\n' +
+                  `- 점검 유형: ${inspectionData.type}\n` +
+                  `- 장비: ${inspectionData.equipment}\n` +
+                  `- 점검자: ${inspectionData.inspector}\n` +
+                  `- 설치위치: ${inspectionData.location}\n` +
+                  `- 점검 항목: ${inspectionData.inspections.length}개\n` +
+                  `- 특이사항: ${inspectionData.notes || '없음'}` +
+                  saveResult);
+            
+            // 메인 화면으로 돌아가기
+            goBackToMain();
+            
+            // 데이터 초기화
+            inspectionData = {
+                type: '',
+                equipment: '',
+                inspector: '',
+                location: '',
+                inspections: [],
+                notes: ''
+            };
+        }
+        
+        // 연결 설정 모달 열기
+        function openConnectionSettings() {
+            document.getElementById('connection-modal').style.display = 'flex';
+        }
+        
+        // 연결 설정 모달 닫기
+        function closeConnectionSettings() {
+            document.getElementById('connection-modal').style.display = 'none';
+        }
+        
+        // 연결 테스트
+        async function testConnection() {
+            const webAppUrl = document.getElementById('webapp-url').value.trim();
+            const debugInfo = document.getElementById('debug-info');
+            
+            if (!webAppUrl) {
+                alert('웹앱 URL을 입력해주세요.');
+                return;
+            }
+            
+            debugInfo.innerHTML = '연결 테스트 중...';
+            
+            try {
+                googleSheetsManager.setWebAppUrl(webAppUrl);
+                await googleSheetsManager.testConnection();
+                
+                debugInfo.innerHTML = '✅ 연결 성공! 구글 시트와 정상적으로 연결되었습니다.';
+                googleSheetsManager.updateConnectionStatus(true);
+                
+                alert('✅ 연결 테스트 성공!\n구글 시트와 정상적으로 연결되었습니다.');
+            } catch (error) {
+                debugInfo.innerHTML = `❌ 연결 실패: ${error.message}`;
+                googleSheetsManager.updateConnectionStatus(false);
+                
+                alert(`❌ 연결 테스트 실패:\n${error.message}`);
+            }
+        }
+        
+        // 연결 설정 저장
+        function saveConnectionSettings() {
+            const webAppUrl = document.getElementById('webapp-url').value.trim();
+            
+            if (!webAppUrl) {
+                alert('웹앱 URL을 입력해주세요.');
+                return;
+            }
+            
+            localStorage.setItem('google_webapp_url', webAppUrl);
+            googleSheetsManager.setWebAppUrl(webAppUrl);
+            
+            alert('✅ 연결 설정이 저장되었습니다!');
+            closeConnectionSettings();
+        }
+        
+        // 페이지 로드 시
+        window.addEventListener('load', () => {
+            document.getElementById('success-message').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
