@@ -1,0 +1,14 @@
+# 민감 파일
+credentials.json
+api-key.txt
+
+# 가이드/문서 (배포 불필요)
+*.md
+*.txt
+*.gs
+*.bat
+
+# 디버그/설정 페이지
+debug.html
+setup-api.html
+egchem-config.js

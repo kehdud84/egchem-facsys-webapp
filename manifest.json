@@ -1,0 +1,14 @@
+{
+  "name": "EGChem FACSYS 점검 시스템",
+  "short_name": "EGChem FACSYS",
+  "description": "EGChem FACSYS 설비 및 장비 점검 관리 시스템",
+  "start_url": "/egchem-facsys-webapp/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#2b2b2b",
+  "orientation": "portrait-primary",
+  "icons": [],
+  "categories": ["productivity", "business"],
+  "lang": "ko",
+  "dir": "ltr"
+}

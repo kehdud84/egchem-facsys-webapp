@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EGChem FACSYS 점검 시스템</title>
+    <meta name="theme-color" content="#2b2b2b">
+    <meta name="description" content="EGChem FACSYS 설비 및 장비 점검 관리 시스템">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- 외부 스타일시트 (preload로 조기 다운로드) -->
+    <link rel="preload" href="styles/main.css" as="style">
+    <link rel="stylesheet" href="styles/main.css">
+    
+    <!-- JS 사전 다운로드 (defer 실행이지만 다운로드는 빨리 시작) -->
+    <link rel="preload" href="js/googleSheets.js" as="script">
+    <link rel="preload" href="js/equipment.js" as="script">
+    <link rel="preload" href="js/app.js" as="script">
+</head>
+<body>
+    <!-- 헤더 -->
+    <div class="header">
+        <div class="logo-container">
+            <img src="logo.png" alt="EG Chem Logo" class="logo-image">
+        </div>
+        <div class="header-status">
+            <div class="status-dot" id="header-status-dot"></div>
+            <span id="header-status-text">Connected</span>
+            <button class="connection-settings-btn" onclick="openConnectionSettings()">연결</button>
+            <button class="btn-primary" onclick="openAllTeamsDashboard()">팀별 점검 현황</button>
+        </div>
+    </div>
+    
+    <!-- 메인 화면 -->
+    <div id="main-screen" class="main-container">
+        <div class="main-card">
+            <h1>FACSYS Program</h1>
+            <div class="divider"></div>
+
+            <div class="site-cards-container">
+                <div class="site-card" id="site-card-1a" onclick="selectSheet('1-A')">
+                    <div class="site-icon">🏭</div>
+                    <div class="site-name">제조팀</div>
+                    <div class="site-status">
+                        <div class="status-dot"></div>
+                        <span>Active</span>
+                    </div>
+                </div>
+                
+                <div class="site-card" id="site-card-1b" onclick="selectSheet('1-B')">
+                    <div class="site-icon">⚗️</div>
+                    <div class="site-name">정제팀</div>
+                    <div class="site-status">
+                        <div class="status-dot"></div>
+                        <span>Active</span>
+                    </div>
+                </div>
+                
+                <div class="site-card" id="site-card-1c" onclick="selectSheet('1-C')">
+                    <div class="site-icon">🚚</div>
+                    <div class="site-name">출하팀</div>
+                    <div class="site-status">
+                        <div class="status-dot"></div>
+                        <span>Active</span>
+                    </div>
+                </div>
+                
+                <div class="site-card" id="site-card-1d" onclick="selectSheet('1-D')">
+                    <div class="site-icon">📊</div>
+                    <div class="site-name">품질부</div>
+                    <div class="site-status">
+                        <div class="status-dot"></div>
+                        <span>Active</span>
+                    </div>
+                </div>
+                
+                <div class="site-card" id="site-card-1e" onclick="selectSheet('1-E')">
+                    <div class="site-icon">🧪</div>
+                    <div class="site-name">연구소</div>
+                    <div class="site-status">
+                        <div class="status-dot"></div>
+                        <span>Active</span>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- 대시보드 화면 -->
+    <div id="dashboard-screen" class="inspection-screen" style="display: none;">
+        <button class="back-button" onclick="goBackToMain()">← 메인 화면</button>
+        
+        <div class="inspection-step">
+            <h2>점검 현황 대시보드</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 2rem;">각 점검 유형별 완료율을 확인하세요</p>
+            
+            <div id="dashboard-charts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 2rem; justify-items: center; min-height: 300px; width: 100%;">
+                <!-- 원그래프들이 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 팀별 점검 현황 화면 -->
+    <div id="all-teams-dashboard-screen" class="inspection-screen" style="display: none;">
+        <button class="back-button" onclick="goBackToMain()">← 메인 화면</button>
+        
+        <div class="inspection-step">
+            <h2>팀별 설비·장비 점검 현황</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 2rem;">모든 팀의 점검 현황을 한 번에 확인합니다</p>
+            
+            <div id="all-teams-dashboard" class="all-teams-table-wrapper">
+                <!-- 팀별 현황 테이블이 여기에 생성됩니다 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 점검 화면 -->
+    <div id="inspection-screen" class="inspection-screen">
+        <button class="back-button" onclick="goBackToMain()">← 메인 화면</button>
+        
+        <!-- 단계 1: 장비 선택 -->
+        <div id="step-equipment" class="inspection-step" style="display: none;">
+            <h2>장비 선택</h2>
+            <p id="equipment-selection-info" style="text-align: center; color: #666; margin-bottom: 1rem;">
+                여러 장비를 선택할 수 있습니다. (선택: 0개)
+            </p>
+            <div id="equipment-items" class="equipment-items"></div>
+            
+            <!-- 장비 관리 버튼들 (개발자용으로 숨김) -->
+            <div class="equipment-management" style="display: none;">
+                <button class="btn-secondary" onclick="addEquipment()">장비 추가</button>
+                <button class="btn-secondary" onclick="deleteEquipment()">장비 삭제</button>
+            </div>
+            
+            <div class="step-buttons">
+                <div></div>
+                <button type="button" class="btn-primary" id="equipment-next-btn" onclick="nextStep('inspection')" disabled>다음</button>
+            </div>
+        </div>
+        
+        <!-- 단계 3: 점검 내용 선택 -->
+        <div id="step-inspection" class="inspection-step" style="display: none;">
+            <h2>점검 내용 선택</h2>
+            <div id="check-items" style="margin: 2rem 0;"></div>
+            
+            <!-- 점검 항목 관리 버튼들 (개발자용으로 숨김) -->
+            <div class="equipment-management" style="display: none;">
+                <button class="btn-secondary" onclick="addInspectionItem()">점검항목 추가</button>
+                <button class="btn-secondary" onclick="deleteInspectionItem()">점검항목 삭제</button>
+            </div>
+            
+            <div class="step-buttons">
+                <button type="button" class="btn-secondary" onclick="prevStep('equipment')">이전</button>
+                <button type="button" class="btn-primary" id="inspection-next-btn" onclick="nextStep('notes')" disabled>다음</button>
+            </div>
+        </div>
+        
+        <!-- 단계 6: 특이사항 입력 및 완료 -->
+        <div id="step-notes" class="inspection-step" style="display: none;">
+            <h2>특이사항 입력</h2>
+            <div style="margin: 2rem 0;">
+                <textarea id="notes" rows="4" placeholder="특이사항을 입력하세요 (선택사항)" 
+                          style="width: 100%; padding: 1rem; font-size: 1rem; border-radius: 12px; border: 2px solid #e0e0e0; background-color: #ffffff; color: #333; resize: vertical; box-sizing: border-box; font-family: inherit; transition: border-color 0.3s ease;"></textarea>
+            </div>
+            <div class="step-buttons">
+                <button type="button" class="btn-secondary" onclick="prevStep('inspection')">이전</button>
+                <button type="button" class="btn-primary" onclick="submitInspection()">점검 완료</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 연결 설정 모달 -->
+    <div id="connection-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔧 구글 시트 연결 설정</h2>
+                <button class="close-btn" onclick="closeConnectionSettings()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background-color: #f5f5f5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #333; border: 1px solid #e0e0e0;">
+                    <strong style="color: #333;">💡 사용 방법:</strong>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem; font-size: 0.9rem; color: #333;">
+                        <li>장비 목록은 이 웹앱에 직접 하드코딩되어 있습니다.</li>
+                        <li>장비 추가/수정은 js/equipment.js 파일의 장비 목록 부분에서 직접 하신 후 배포하시면 됩니다.</li>
+                        <li>구글 시트 연결은 <strong style="color: #333;">점검 완료 데이터만</strong> 저장하는 용도로 사용됩니다.</li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label>Google Apps Script 웹앱 URL:</label>
+                    <input type="text" id="webapp-url" placeholder="https://script.google.com/macros/s/.../exec">
+                    <small style="color: #666;">점검 완료 데이터를 저장하기 위한 연결입니다.</small>
+                </div>
+                <div class="form-group">
+                    <label>스프레드시트 ID:</label>
+                    <input type="text" id="spreadsheet-id" value="1QjU-kQDRgDrZ5tUn6awJhRWWx9u0Mt4uLCFmkOqLNcQ" readonly>
+                </div>
+                <div class="form-group">
+                    <label>연결 상태:</label>
+                    <span id="modal-connection-status" class="status-indicator disconnected">연결 안됨</span>
+                </div>
+                <div class="form-group">
+                    <label>디버그 정보:</label>
+                    <div id="debug-info" style="background-color: #f5f5f5; padding: 1rem; border-radius: 8px; font-size: 0.9rem; color: #333; border: 1px solid #e0e0e0;">
+                        연결 테스트를 실행하면 여기에 상세 정보가 표시됩니다.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeConnectionSettings()">취소</button>
+                <button class="btn-primary" onclick="testConnection()">연결 테스트</button>
+                <button class="btn-primary" onclick="saveConnectionSettings()">저장</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 전역 변수 (JS 파일들이 의존) -->
+    <script>
+        let currentSheetName = '1-A';
+    </script>
+    
+    <!-- 외부 JavaScript (defer: HTML 파싱을 차단하지 않고, 순서는 유지) -->
+    <script src="js/googleSheets.js" defer></script>
+    <script src="js/equipment.js" defer></script>
+    <script src="js/app.js" defer></script>
+</body>
+</html>
