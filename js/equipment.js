@@ -192,14 +192,16 @@ class RepairTracker {
     addRecord(sheetName, inspectionType, equipmentName, notes) {
         const now = new Date();
         const koreanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
-        this.history.push({
+        const record = {
             date: koreanTime.toISOString().split('T')[0],
             sheet: sheetName,
             type: inspectionType,
             equipment: equipmentName,
             notes: notes || ''
-        });
+        };
+        this.history.push(record);
         this._save();
+        return record;
     }
 
     getByTeam(sheetName) {
