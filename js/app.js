@@ -234,7 +234,7 @@ async function loadAllTeamsDashboard() {
 /* ========================================
    수리 현황 (허브에서 진입)
    ======================================== */
-function openRepairStatusFromHub() {
+async function openRepairStatusFromHub() {
     const hubScreen = document.getElementById('overview-hub-screen');
     const repairScreen = document.getElementById('repair-status-screen');
 
@@ -250,16 +250,37 @@ function openRepairStatusFromHub() {
     repairScreen.classList.add('active');
     window.scrollTo({ top: 0, behavior: 'instant' });
 
-    loadRepairDashboard();
+    await loadRepairDashboard();
 }
 
 let repairSelectedYear = 'all';
 
-function loadRepairDashboard() {
+async function loadRepairDashboard() {
     const container = document.getElementById('repair-dashboard');
     if (!container) return;
 
-    const allRecords = repairTracker.getAll();
+    container.innerHTML = `
+        <div style="text-align: center; padding: 3rem 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div>
+            <div style="color: #666;">수리 이력을 불러오는 중...</div>
+        </div>`;
+
+    let allRecords = [];
+    let dataSource = '';
+
+    if (googleSheetsManager.webAppUrl) {
+        try {
+            allRecords = await googleSheetsManager.getRepairRecords();
+            dataSource = 'cloud';
+        } catch (err) {
+            console.warn('Google Sheets 수리 기록 조회 실패, localStorage 사용:', err);
+            allRecords = repairTracker.getAll();
+            dataSource = 'local';
+        }
+    } else {
+        allRecords = repairTracker.getAll();
+        dataSource = 'local';
+    }
 
     if (allRecords.length === 0) {
         container.innerHTML = `
@@ -290,7 +311,9 @@ function loadRepairDashboard() {
 
     let html = '';
 
-    // 연도 필터 버튼
+    const sourceLabel = dataSource === 'cloud' ? '☁️ Google Sheets' : '📱 로컬 저장소';
+    html += `<div style="text-align: right; font-size: 0.75rem; color: #999; margin-bottom: 0.5rem;">${sourceLabel}</div>`;
+
     html += '<div class="repair-year-filter">';
     html += `<button class="repair-year-btn ${repairSelectedYear === 'all' ? 'active' : ''}" onclick="repairSelectedYear='all'; loadRepairDashboard()">전체</button>`;
     for (const y of years) {
@@ -298,7 +321,6 @@ function loadRepairDashboard() {
     }
     html += '</div>';
 
-    // 팀별 수리 건수 막대그래프
     html += '<div class="repair-section">';
     html += '<h3 class="repair-section-title">팀별 수리 건수</h3>';
     const yearLabel = repairSelectedYear === 'all' ? '전체' : `${repairSelectedYear}년`;
@@ -317,7 +339,6 @@ function loadRepairDashboard() {
     }
     html += '</div></div>';
 
-    // 장비별 수리 건수 (상위 10개)
     const equipMap = {};
     filtered.forEach(r => { equipMap[r.equipment] = (equipMap[r.equipment] || 0) + 1; });
     const equipRanking = Object.entries(equipMap)
@@ -344,7 +365,6 @@ function loadRepairDashboard() {
         html += '</div></div>';
     }
 
-    // 최근 수리 이력 목록 (최근 20건)
     const recentRecords = [...filtered].reverse().slice(0, 20);
     if (recentRecords.length > 0) {
         const teamNames = { '1-A': '제조팀', '1-B': '정제팀', '1-C': '출하팀', '1-D': '품질부', '1-E': '연구소' };
@@ -963,7 +983,14 @@ async function submitInspection() {
         }
 
         if (hasRepair) {
-            repairTracker.addRecord(currentSheetName || '1-A', inspectionData.type, equipmentName, inspectionData.notes);
+            const repairRecord = repairTracker.addRecord(currentSheetName || '1-A', inspectionData.type, equipmentName, inspectionData.notes);
+            if (googleSheetsManager.webAppUrl && repairRecord) {
+                googleSheetsManager.addRepairRecord(repairRecord).then(() => {
+                    googleSheetsManager.clearCache();
+                }).catch(err => {
+                    console.warn('수리 기록 Google Sheets 저장 실패 (로컬 저장 완료):', err);
+                });
+            }
         }
     }
     
