@@ -1009,6 +1009,37 @@ body {
     background-color: #FF9800 !important;
 }
 
+.repair-year-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.repair-year-btn {
+    padding: 0.5rem 1.2rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 999px;
+    background-color: #fff;
+    color: #555;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.repair-year-btn:hover {
+    border-color: #FF9800;
+    color: #FF9800;
+}
+
+.repair-year-btn.active {
+    background-color: #FF9800;
+    border-color: #FF9800;
+    color: #fff;
+}
+
 .repair-section {
     margin-bottom: 2.5rem;
 }
