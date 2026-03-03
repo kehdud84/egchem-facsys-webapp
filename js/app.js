@@ -253,14 +253,15 @@ function openRepairStatusFromHub() {
     loadRepairDashboard();
 }
 
+let repairSelectedYear = 'all';
+
 function loadRepairDashboard() {
     const container = document.getElementById('repair-dashboard');
     if (!container) return;
 
-    const summary = repairTracker.getTeamSummary();
-    const totalRepairs = summary.reduce((sum, t) => sum + t.total, 0);
+    const allRecords = repairTracker.getAll();
 
-    if (totalRepairs === 0) {
+    if (allRecords.length === 0) {
         container.innerHTML = `
             <div class="repair-empty">
                 <div class="repair-empty-icon">🔧</div>
@@ -270,16 +271,40 @@ function loadRepairDashboard() {
         return;
     }
 
-    const maxCount = Math.max(...summary.map(t => t.total), 1);
+    const years = [...new Set(allRecords.map(r => r.date?.substring(0, 4)).filter(Boolean))].sort().reverse();
+    const filtered = repairSelectedYear === 'all' ? allRecords : allRecords.filter(r => r.date?.startsWith(repairSelectedYear));
+
+    const teams = [
+        { sheet: '1-A', name: '제조팀' },
+        { sheet: '1-B', name: '정제팀' },
+        { sheet: '1-C', name: '출하팀' },
+        { sheet: '1-D', name: '품질부' },
+        { sheet: '1-E', name: '연구소' }
+    ];
+    const teamCounts = teams.map(t => ({
+        ...t,
+        total: filtered.filter(r => r.sheet === t.sheet).length
+    }));
+    const totalRepairs = filtered.length;
+    const maxCount = Math.max(...teamCounts.map(t => t.total), 1);
 
     let html = '';
+
+    // 연도 필터 버튼
+    html += '<div class="repair-year-filter">';
+    html += `<button class="repair-year-btn ${repairSelectedYear === 'all' ? 'active' : ''}" onclick="repairSelectedYear='all'; loadRepairDashboard()">전체</button>`;
+    for (const y of years) {
+        html += `<button class="repair-year-btn ${repairSelectedYear === y ? 'active' : ''}" onclick="repairSelectedYear='${y}'; loadRepairDashboard()">${y}년</button>`;
+    }
+    html += '</div>';
 
     // 팀별 수리 건수 막대그래프
     html += '<div class="repair-section">';
     html += '<h3 class="repair-section-title">팀별 수리 건수</h3>';
-    html += `<div class="repair-total">전체 수리 건수: <strong>${totalRepairs}건</strong></div>`;
+    const yearLabel = repairSelectedYear === 'all' ? '전체' : `${repairSelectedYear}년`;
+    html += `<div class="repair-total">${yearLabel} 수리 건수: <strong>${totalRepairs}건</strong></div>`;
     html += '<div class="repair-bar-chart">';
-    for (const team of summary) {
+    for (const team of teamCounts) {
         const pct = maxCount > 0 ? (team.total / maxCount) * 100 : 0;
         html += `
             <div class="repair-bar-row">
@@ -292,13 +317,9 @@ function loadRepairDashboard() {
     }
     html += '</div></div>';
 
-    // 장비별 수리 건수 (전체 합산, 상위 10개)
-    const allRecords = repairTracker.getAll();
+    // 장비별 수리 건수 (상위 10개)
     const equipMap = {};
-    allRecords.forEach(r => {
-        const key = `${r.equipment}`;
-        equipMap[key] = (equipMap[key] || 0) + 1;
-    });
+    filtered.forEach(r => { equipMap[r.equipment] = (equipMap[r.equipment] || 0) + 1; });
     const equipRanking = Object.entries(equipMap)
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count)
@@ -324,7 +345,7 @@ function loadRepairDashboard() {
     }
 
     // 최근 수리 이력 목록 (최근 20건)
-    const recentRecords = [...allRecords].reverse().slice(0, 20);
+    const recentRecords = [...filtered].reverse().slice(0, 20);
     if (recentRecords.length > 0) {
         const teamNames = { '1-A': '제조팀', '1-B': '정제팀', '1-C': '출하팀', '1-D': '품질부', '1-E': '연구소' };
         html += '<div class="repair-section">';
