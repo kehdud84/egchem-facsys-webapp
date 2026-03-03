@@ -267,19 +267,32 @@ async function loadRepairDashboard() {
 
     let allRecords = [];
     let dataSource = '';
+    let loadError = null;
 
     if (googleSheetsManager.webAppUrl) {
         try {
             allRecords = await googleSheetsManager.getRepairRecords();
             dataSource = 'cloud';
         } catch (err) {
-            console.warn('Google Sheets 수리 기록 조회 실패, localStorage 사용:', err);
+            console.warn('Google Sheets 수리 기록 조회 실패:', err);
+            loadError = err.message || '알 수 없는 오류';
             allRecords = repairTracker.getAll();
             dataSource = 'local';
         }
     } else {
         allRecords = repairTracker.getAll();
         dataSource = 'local';
+    }
+
+    if (loadError && allRecords.length === 0) {
+        container.innerHTML = `
+            <div class="repair-empty">
+                <div class="repair-empty-icon">⚠️</div>
+                <div class="repair-empty-text">Google Sheets 연결 실패</div>
+                <div class="repair-empty-sub">${loadError}</div>
+                <button onclick="loadRepairDashboard()" style="margin-top: 1.5rem; padding: 0.7rem 2rem; background-color: #FF9800; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer;">다시 시도</button>
+            </div>`;
+        return;
     }
 
     if (allRecords.length === 0) {
