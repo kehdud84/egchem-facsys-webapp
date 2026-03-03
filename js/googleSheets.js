@@ -414,6 +414,38 @@ class GoogleSheetsManager {
             return null;
         }
     }
+    
+    async addRepairRecord(record) {
+        if (!this.webAppUrl) throw new Error('웹앱 URL이 설정되지 않았습니다.');
+        const params = new URLSearchParams({
+            action: 'addRepairRecord',
+            date: record.date,
+            sheet: record.sheet,
+            type: record.type,
+            equipment: record.equipment,
+            notes: record.notes || ''
+        });
+        const result = await this._jsonpRequest(params, 10000);
+        if (result && result.success) return true;
+        throw new Error(result?.error || '수리 기록 저장 실패');
+    }
+    
+    async getRepairRecords() {
+        if (!this.webAppUrl) throw new Error('웹앱 URL이 설정되지 않았습니다.');
+        
+        const cacheKey = 'repair_records_all';
+        const cached = this._getCache(cacheKey);
+        if (cached) return cached;
+        
+        const params = new URLSearchParams({ action: 'getRepairRecords' });
+        const result = await this._jsonpRequest(params, 10000);
+        if (result && result.success) {
+            const data = result.data || [];
+            this._setCache(cacheKey, data);
+            return data;
+        }
+        throw new Error(result?.error || '수리 기록 가져오기 실패');
+    }
 }
 
 // 전역 인스턴스 생성
