@@ -1124,6 +1124,39 @@ body {
     background: linear-gradient(90deg, #66BB6A, #43A047);
 }
 
+.repair-bar-fill.prev-bar {
+    background: linear-gradient(90deg, #BBDEFB, #90CAF9);
+}
+
+.repair-bar-group {
+    margin-bottom: 0.75rem;
+}
+
+.repair-bar-group .repair-bar-row {
+    margin-bottom: 0;
+}
+
+.repair-bar-group .repair-bar-row.prev {
+    margin-top: 2px;
+}
+
+.repair-bar-group .repair-bar-row.prev .repair-bar-track {
+    height: 18px;
+    background-color: #f5f5f5;
+}
+
+.repair-bar-value.prev-value {
+    color: #90CAF9;
+    font-weight: 600;
+}
+
+.repair-bar-legend {
+    display: flex;
+    gap: 1.2rem;
+    margin-bottom: 1rem;
+    justify-content: flex-end;
+}
+
 .repair-summary-cards {
     display: flex;
     gap: 1rem;
