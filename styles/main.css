@@ -1111,12 +1111,70 @@ body {
 }
 
 .repair-bar-value {
-    width: 50px;
+    min-width: 50px;
     font-weight: 700;
     font-size: 0.9rem;
     color: #555;
     text-align: right;
     flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.repair-bar-fill.cost-bar {
+    background: linear-gradient(90deg, #66BB6A, #43A047);
+}
+
+.repair-summary-cards {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.repair-summary-card {
+    flex: 1;
+    background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+    border: 1px solid #FFE0B2;
+    border-radius: 10px;
+    padding: 1.2rem;
+    text-align: center;
+}
+
+.repair-summary-card.cost {
+    background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+    border-color: #C8E6C9;
+}
+
+.repair-summary-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 0.4rem;
+}
+
+.repair-summary-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #333;
+}
+
+.repair-summary-card.cost .repair-summary-value {
+    color: #2E7D32;
+}
+
+.repair-summary-unit {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #888;
+    margin-left: 2px;
+}
+
+.repair-history-cost {
+    background-color: #E8F5E9;
+    color: #2E7D32;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.8rem;
 }
 
 .repair-empty {
@@ -1340,13 +1398,22 @@ body {
         width: 100%;
     }
 
+    .repair-summary-cards {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .repair-summary-value {
+        font-size: 1.3rem;
+    }
+
     .repair-bar-label {
         width: 80px;
         font-size: 0.8rem;
     }
 
     .repair-bar-value {
-        width: 45px;
+        min-width: 40px;
         font-size: 0.8rem;
     }
 
