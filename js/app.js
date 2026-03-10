@@ -321,8 +321,14 @@ async function loadRepairDashboard() {
     const years = [...new Set(allRecords.map(r => r.date?.substring(0, 4)).filter(Boolean))].sort();
     const filtered = repairSelectedYear === 'all' ? allRecords : allRecords.filter(r => r.date?.startsWith(repairSelectedYear));
 
-    const curYr = new Date().getFullYear().toString();
-    const prevYr = (parseInt(curYr) - 1).toString();
+    let curYr, prevYr;
+    if (repairSelectedYear !== 'all') {
+        curYr = repairSelectedYear;
+        prevYr = (parseInt(curYr) - 1).toString();
+    } else {
+        curYr = new Date().getFullYear().toString();
+        prevYr = (parseInt(curYr) - 1).toString();
+    }
     const curRecords = allRecords.filter(r => r.date?.startsWith(curYr));
     const prevRecords = allRecords.filter(r => r.date?.startsWith(prevYr));
 
@@ -463,8 +469,8 @@ async function loadRepairDashboard() {
     }
 
     // 월별 수리 금액 꺾은선 그래프
-    const currentYear = new Date().getFullYear().toString();
-    const prevYear = (parseInt(currentYear) - 1).toString();
+    const currentYear = curYr;
+    const prevYear = prevYr;
     const monthlyData = {};
 
     [currentYear, prevYear].forEach(yr => {
