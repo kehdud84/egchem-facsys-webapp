@@ -317,8 +317,13 @@ async function loadRepairDashboard() {
         return;
     }
 
-    const years = [...new Set(allRecords.map(r => r.date?.substring(0, 4)).filter(Boolean))].sort().reverse();
+    const years = [...new Set(allRecords.map(r => r.date?.substring(0, 4)).filter(Boolean))].sort();
     const filtered = repairSelectedYear === 'all' ? allRecords : allRecords.filter(r => r.date?.startsWith(repairSelectedYear));
+
+    const curYr = new Date().getFullYear().toString();
+    const prevYr = (parseInt(curYr) - 1).toString();
+    const curRecords = allRecords.filter(r => r.date?.startsWith(curYr));
+    const prevRecords = allRecords.filter(r => r.date?.startsWith(prevYr));
 
     const teams = [
         { sheet: '1-A', name: '제조팀' },
@@ -327,12 +332,9 @@ async function loadRepairDashboard() {
         { sheet: '1-D', name: '품질부' },
         { sheet: '1-E', name: '연구소' }
     ];
-    const teamCounts = teams.map(t => ({
-        ...t,
-        total: filtered.filter(r => r.sheet === t.sheet).length
-    }));
+
     const totalRepairs = filtered.length;
-    const maxCount = Math.max(...teamCounts.map(t => t.total), 1);
+    const formatCost = (n) => n.toLocaleString('ko-KR');
 
     let html = '';
 
@@ -348,7 +350,6 @@ async function loadRepairDashboard() {
 
     const yearLabel = repairSelectedYear === 'all' ? '전체' : `${repairSelectedYear}년`;
     const totalCost = filtered.reduce((sum, r) => sum + (r.cost || 0), 0);
-    const formatCost = (n) => n.toLocaleString('ko-KR');
 
     html += '<div class="repair-summary-cards">';
     html += `<div class="repair-summary-card">
@@ -361,73 +362,100 @@ async function loadRepairDashboard() {
     </div>`;
     html += '</div>';
 
+    const barLegend = `<div class="repair-bar-legend"><span class="repair-legend-item"><span class="repair-legend-dot" style="background:#FF9800;"></span>${curYr}년</span><span class="repair-legend-item"><span class="repair-legend-dot" style="background:#90CAF9;"></span>${prevYr}년</span></div>`;
+
+    // 팀별 수리 건수
+    const teamCountsCur = teams.map(t => curRecords.filter(r => r.sheet === t.sheet).length);
+    const teamCountsPrev = teams.map(t => prevRecords.filter(r => r.sheet === t.sheet).length);
+    const maxCount = Math.max(...teamCountsCur, ...teamCountsPrev, 1);
+
     html += '<div class="repair-section">';
     html += '<h3 class="repair-section-title">팀별 수리 건수</h3>';
+    html += barLegend;
     html += '<div class="repair-bar-chart">';
-    for (const team of teamCounts) {
-        const pct = maxCount > 0 ? (team.total / maxCount) * 100 : 0;
+    teams.forEach((team, i) => {
+        const pctCur = (teamCountsCur[i] / maxCount) * 100;
+        const pctPrev = (teamCountsPrev[i] / maxCount) * 100;
         html += `
-            <div class="repair-bar-row">
-                <div class="repair-bar-label">${team.name}</div>
-                <div class="repair-bar-track">
-                    <div class="repair-bar-fill" style="width: ${pct}%"></div>
-                </div>
-                <div class="repair-bar-value">${team.total}건</div>
-            </div>`;
-    }
-    html += '</div></div>';
-
-    const teamCostData = teams.map(t => ({
-        ...t,
-        totalCost: filtered.filter(r => r.sheet === t.sheet).reduce((sum, r) => sum + (r.cost || 0), 0)
-    }));
-    const hasCostData = teamCostData.some(t => t.totalCost > 0);
-
-    if (hasCostData) {
-        const maxCost = Math.max(...teamCostData.map(t => t.totalCost), 1);
-        html += '<div class="repair-section">';
-        html += '<h3 class="repair-section-title">팀별 수리 금액</h3>';
-        html += '<div class="repair-bar-chart">';
-        for (const team of teamCostData) {
-            const pct = maxCost > 0 ? (team.totalCost / maxCost) * 100 : 0;
-            html += `
+            <div class="repair-bar-group">
                 <div class="repair-bar-row">
                     <div class="repair-bar-label">${team.name}</div>
-                    <div class="repair-bar-track">
-                        <div class="repair-bar-fill cost-bar" style="width: ${pct}%"></div>
+                    <div class="repair-bar-track"><div class="repair-bar-fill" style="width: ${pctCur}%"></div></div>
+                    <div class="repair-bar-value">${teamCountsCur[i]}건</div>
+                </div>
+                <div class="repair-bar-row prev">
+                    <div class="repair-bar-label"></div>
+                    <div class="repair-bar-track"><div class="repair-bar-fill prev-bar" style="width: ${pctPrev}%"></div></div>
+                    <div class="repair-bar-value prev-value">${teamCountsPrev[i]}건</div>
+                </div>
+            </div>`;
+    });
+    html += '</div></div>';
+
+    // 팀별 수리 금액
+    const teamCostCur = teams.map(t => curRecords.filter(r => r.sheet === t.sheet).reduce((s, r) => s + (r.cost || 0), 0));
+    const teamCostPrev = teams.map(t => prevRecords.filter(r => r.sheet === t.sheet).reduce((s, r) => s + (r.cost || 0), 0));
+    const hasCostData = [...teamCostCur, ...teamCostPrev].some(v => v > 0);
+
+    if (hasCostData) {
+        const maxCost = Math.max(...teamCostCur, ...teamCostPrev, 1);
+        html += '<div class="repair-section">';
+        html += '<h3 class="repair-section-title">팀별 수리 금액</h3>';
+        html += barLegend;
+        html += '<div class="repair-bar-chart">';
+        teams.forEach((team, i) => {
+            const pctCur = (teamCostCur[i] / maxCost) * 100;
+            const pctPrev = (teamCostPrev[i] / maxCost) * 100;
+            html += `
+                <div class="repair-bar-group">
+                    <div class="repair-bar-row">
+                        <div class="repair-bar-label">${team.name}</div>
+                        <div class="repair-bar-track"><div class="repair-bar-fill cost-bar" style="width: ${pctCur}%"></div></div>
+                        <div class="repair-bar-value">${formatCost(teamCostCur[i])}원</div>
                     </div>
-                    <div class="repair-bar-value">${formatCost(team.totalCost)}원</div>
+                    <div class="repair-bar-row prev">
+                        <div class="repair-bar-label"></div>
+                        <div class="repair-bar-track"><div class="repair-bar-fill prev-bar" style="width: ${pctPrev}%"></div></div>
+                        <div class="repair-bar-value prev-value">${formatCost(teamCostPrev[i])}원</div>
+                    </div>
                 </div>`;
-        }
+        });
         html += '</div></div>';
     }
 
-    const equipMap = {};
-    const equipCostMap = {};
-    filtered.forEach(r => {
-        equipMap[r.equipment] = (equipMap[r.equipment] || 0) + 1;
-        equipCostMap[r.equipment] = (equipCostMap[r.equipment] || 0) + (r.cost || 0);
-    });
-    const equipRanking = Object.entries(equipMap)
-        .map(([name, count]) => ({ name, count, cost: equipCostMap[name] || 0 }))
-        .sort((a, b) => b.count - a.count)
+    // 장비별 수리 건수
+    const equipCur = {}, equipPrev = {}, equipCostAll = {};
+    curRecords.forEach(r => { equipCur[r.equipment] = (equipCur[r.equipment] || 0) + 1; });
+    prevRecords.forEach(r => { equipPrev[r.equipment] = (equipPrev[r.equipment] || 0) + 1; });
+    filtered.forEach(r => { equipCostAll[r.equipment] = (equipCostAll[r.equipment] || 0) + (r.cost || 0); });
+    const allEquipNames = [...new Set([...Object.keys(equipCur), ...Object.keys(equipPrev)])];
+    const equipRanking = allEquipNames
+        .map(name => ({ name, cur: equipCur[name] || 0, prev: equipPrev[name] || 0, cost: equipCostAll[name] || 0 }))
+        .sort((a, b) => (b.cur + b.prev) - (a.cur + a.prev))
         .slice(0, 10);
 
     if (equipRanking.length > 0) {
-        const equipMax = equipRanking[0].count;
+        const equipMax = Math.max(...equipRanking.map(e => Math.max(e.cur, e.prev)), 1);
         html += '<div class="repair-section">';
         html += '<h3 class="repair-section-title">장비별 수리 건수 (상위 10)</h3>';
+        html += barLegend;
         html += '<div class="repair-bar-chart">';
         for (const eq of equipRanking) {
-            const pct = equipMax > 0 ? (eq.count / equipMax) * 100 : 0;
+            const pctCur = (eq.cur / equipMax) * 100;
+            const pctPrev = (eq.prev / equipMax) * 100;
             const costText = eq.cost > 0 ? ` / ${formatCost(eq.cost)}원` : '';
             html += `
-                <div class="repair-bar-row">
-                    <div class="repair-bar-label">${eq.name}</div>
-                    <div class="repair-bar-track">
-                        <div class="repair-bar-fill equipment-bar" style="width: ${pct}%"></div>
+                <div class="repair-bar-group">
+                    <div class="repair-bar-row">
+                        <div class="repair-bar-label">${eq.name}</div>
+                        <div class="repair-bar-track"><div class="repair-bar-fill equipment-bar" style="width: ${pctCur}%"></div></div>
+                        <div class="repair-bar-value">${eq.cur}건${costText}</div>
                     </div>
-                    <div class="repair-bar-value">${eq.count}건${costText}</div>
+                    <div class="repair-bar-row prev">
+                        <div class="repair-bar-label"></div>
+                        <div class="repair-bar-track"><div class="repair-bar-fill prev-bar" style="width: ${pctPrev}%"></div></div>
+                        <div class="repair-bar-value prev-value">${eq.prev}건</div>
+                    </div>
                 </div>`;
         }
         html += '</div></div>';
