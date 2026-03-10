@@ -433,6 +433,81 @@ async function loadRepairDashboard() {
         html += '</div></div>';
     }
 
+    // 월별 수리 금액 꺾은선 그래프
+    const currentYear = new Date().getFullYear().toString();
+    const prevYear = (parseInt(currentYear) - 1).toString();
+    const monthlyData = {};
+
+    [currentYear, prevYear].forEach(yr => {
+        monthlyData[yr] = Array(12).fill(0);
+        allRecords.filter(r => r.date?.startsWith(yr)).forEach(r => {
+            const m = parseInt(r.date.substring(5, 7)) - 1;
+            if (m >= 0 && m < 12) monthlyData[yr][m] += (r.cost || 0);
+        });
+    });
+
+    const allMonthlyValues = [...monthlyData[currentYear], ...monthlyData[prevYear]];
+    const maxMonthly = Math.max(...allMonthlyValues, 1);
+    const hasMonthlyData = allMonthlyValues.some(v => v > 0);
+
+    if (hasMonthlyData) {
+        const svgW = 700, svgH = 300;
+        const padL = 70, padR = 20, padT = 30, padB = 40;
+        const chartW = svgW - padL - padR;
+        const chartH = svgH - padT - padB;
+
+        const getX = (i) => padL + (i / 11) * chartW;
+        const getY = (v) => padT + chartH - (v / maxMonthly) * chartH;
+
+        const makeLine = (data, color) => {
+            const points = data.map((v, i) => `${getX(i)},${getY(v)}`);
+            let svg = `<polyline points="${points.join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+            data.forEach((v, i) => {
+                if (v > 0) {
+                    svg += `<circle cx="${getX(i)}" cy="${getY(v)}" r="4" fill="${color}" stroke="#fff" stroke-width="1.5"/>`;
+                    svg += `<text x="${getX(i)}" y="${getY(v) - 10}" text-anchor="middle" font-size="10" font-weight="600" fill="${color}">${formatCost(v)}</text>`;
+                }
+            });
+            return svg;
+        };
+
+        const gridLines = () => {
+            let svg = '';
+            const steps = 4;
+            for (let i = 0; i <= steps; i++) {
+                const y = padT + (chartH / steps) * i;
+                const val = maxMonthly - (maxMonthly / steps) * i;
+                svg += `<line x1="${padL}" y1="${y}" x2="${svgW - padR}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`;
+                svg += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#999">${formatCost(Math.round(val))}</text>`;
+            }
+            return svg;
+        };
+
+        const monthLabels = () => {
+            let svg = '';
+            const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+            months.forEach((m, i) => {
+                svg += `<text x="${getX(i)}" y="${svgH - 10}" text-anchor="middle" font-size="11" fill="#666">${m}</text>`;
+            });
+            return svg;
+        };
+
+        html += '<div class="repair-section">';
+        html += '<h3 class="repair-section-title">월별 수리 금액</h3>';
+        html += '<div class="repair-line-chart-container">';
+        html += `<svg viewBox="0 0 ${svgW} ${svgH}" class="repair-line-chart">`;
+        html += gridLines();
+        html += monthLabels();
+        html += makeLine(monthlyData[prevYear], '#90CAF9');
+        html += makeLine(monthlyData[currentYear], '#FF9800');
+        html += '</svg>';
+        html += '<div class="repair-line-legend">';
+        html += `<span class="repair-legend-item"><span class="repair-legend-dot" style="background:#FF9800;"></span>${currentYear}년</span>`;
+        html += `<span class="repair-legend-item"><span class="repair-legend-dot" style="background:#90CAF9;"></span>${prevYear}년</span>`;
+        html += '</div>';
+        html += '</div></div>';
+    }
+
     const recentRecords = [...filtered].reverse().slice(0, 20);
     if (recentRecords.length > 0) {
         const teamNames = { '1-A': '제조팀', '1-B': '정제팀', '1-C': '출하팀', '1-D': '품질부', '1-E': '연구소' };
