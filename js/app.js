@@ -10,9 +10,10 @@ const equipmentManager = new EquipmentManager();
 // 점검 데이터 (현재 세션)
 let inspectionData = {
     type: '',
-    equipment: [],    // 여러 장비 선택 가능
+    equipment: [],
     inspections: [],
-    notes: ''
+    notes: '',
+    repairCost: 0
 };
 
 let currentStep = 'type';
@@ -265,23 +266,34 @@ async function loadRepairDashboard() {
             <div style="color: #666;">수리 이력을 불러오는 중...</div>
         </div>`;
 
-    let allRecords = [];
+    let cloudRecords = [];
+    let localRecords = repairTracker.getAll();
     let dataSource = '';
     let loadError = null;
 
     if (googleSheetsManager.webAppUrl) {
         try {
-            allRecords = await googleSheetsManager.getRepairRecords();
+            cloudRecords = await googleSheetsManager.getRepairRecords();
             dataSource = 'cloud';
         } catch (err) {
             console.warn('Google Sheets 수리 기록 조회 실패:', err);
             loadError = err.message || '알 수 없는 오류';
-            allRecords = repairTracker.getAll();
             dataSource = 'local';
         }
     } else {
-        allRecords = repairTracker.getAll();
         dataSource = 'local';
+    }
+
+    let allRecords;
+    if (cloudRecords.length >= localRecords.length) {
+        allRecords = cloudRecords;
+        dataSource = 'cloud';
+    } else if (cloudRecords.length > 0) {
+        allRecords = cloudRecords;
+        dataSource = 'cloud';
+    } else {
+        allRecords = localRecords;
+        dataSource = localRecords.length > 0 ? 'local' : (loadError ? 'error' : 'empty');
     }
 
     if (loadError && allRecords.length === 0) {
@@ -324,7 +336,7 @@ async function loadRepairDashboard() {
 
     let html = '';
 
-    const sourceLabel = dataSource === 'cloud' ? '☁️ Google Sheets' : '📱 로컬 저장소';
+    const sourceLabel = dataSource === 'cloud' ? '☁️ Google Sheets' : '📱 이 기기 저장소';
     html += `<div style="text-align: right; font-size: 0.75rem; color: #999; margin-bottom: 0.5rem;">${sourceLabel}</div>`;
 
     html += '<div class="repair-year-filter">';
@@ -334,10 +346,23 @@ async function loadRepairDashboard() {
     }
     html += '</div>';
 
+    const yearLabel = repairSelectedYear === 'all' ? '전체' : `${repairSelectedYear}년`;
+    const totalCost = filtered.reduce((sum, r) => sum + (r.cost || 0), 0);
+    const formatCost = (n) => n.toLocaleString('ko-KR');
+
+    html += '<div class="repair-summary-cards">';
+    html += `<div class="repair-summary-card">
+        <div class="repair-summary-label">${yearLabel} 수리 건수</div>
+        <div class="repair-summary-value">${totalRepairs}<span class="repair-summary-unit">건</span></div>
+    </div>`;
+    html += `<div class="repair-summary-card cost">
+        <div class="repair-summary-label">${yearLabel} 수리 금액</div>
+        <div class="repair-summary-value">${formatCost(totalCost)}<span class="repair-summary-unit">원</span></div>
+    </div>`;
+    html += '</div>';
+
     html += '<div class="repair-section">';
     html += '<h3 class="repair-section-title">팀별 수리 건수</h3>';
-    const yearLabel = repairSelectedYear === 'all' ? '전체' : `${repairSelectedYear}년`;
-    html += `<div class="repair-total">${yearLabel} 수리 건수: <strong>${totalRepairs}건</strong></div>`;
     html += '<div class="repair-bar-chart">';
     for (const team of teamCounts) {
         const pct = maxCount > 0 ? (team.total / maxCount) * 100 : 0;
@@ -352,10 +377,39 @@ async function loadRepairDashboard() {
     }
     html += '</div></div>';
 
+    const teamCostData = teams.map(t => ({
+        ...t,
+        totalCost: filtered.filter(r => r.sheet === t.sheet).reduce((sum, r) => sum + (r.cost || 0), 0)
+    }));
+    const hasCostData = teamCostData.some(t => t.totalCost > 0);
+
+    if (hasCostData) {
+        const maxCost = Math.max(...teamCostData.map(t => t.totalCost), 1);
+        html += '<div class="repair-section">';
+        html += '<h3 class="repair-section-title">팀별 수리 금액</h3>';
+        html += '<div class="repair-bar-chart">';
+        for (const team of teamCostData) {
+            const pct = maxCost > 0 ? (team.totalCost / maxCost) * 100 : 0;
+            html += `
+                <div class="repair-bar-row">
+                    <div class="repair-bar-label">${team.name}</div>
+                    <div class="repair-bar-track">
+                        <div class="repair-bar-fill cost-bar" style="width: ${pct}%"></div>
+                    </div>
+                    <div class="repair-bar-value">${formatCost(team.totalCost)}원</div>
+                </div>`;
+        }
+        html += '</div></div>';
+    }
+
     const equipMap = {};
-    filtered.forEach(r => { equipMap[r.equipment] = (equipMap[r.equipment] || 0) + 1; });
+    const equipCostMap = {};
+    filtered.forEach(r => {
+        equipMap[r.equipment] = (equipMap[r.equipment] || 0) + 1;
+        equipCostMap[r.equipment] = (equipCostMap[r.equipment] || 0) + (r.cost || 0);
+    });
     const equipRanking = Object.entries(equipMap)
-        .map(([name, count]) => ({ name, count }))
+        .map(([name, count]) => ({ name, count, cost: equipCostMap[name] || 0 }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
 
@@ -366,13 +420,14 @@ async function loadRepairDashboard() {
         html += '<div class="repair-bar-chart">';
         for (const eq of equipRanking) {
             const pct = equipMax > 0 ? (eq.count / equipMax) * 100 : 0;
+            const costLabel = eq.cost > 0 ? ` / ${formatCost(eq.cost)}원` : '';
             html += `
                 <div class="repair-bar-row">
                     <div class="repair-bar-label">${eq.name}</div>
                     <div class="repair-bar-track">
                         <div class="repair-bar-fill equipment-bar" style="width: ${pct}%"></div>
                     </div>
-                    <div class="repair-bar-value">${eq.count}건</div>
+                    <div class="repair-bar-value">${eq.count}건${costLabel}</div>
                 </div>`;
         }
         html += '</div></div>';
@@ -385,6 +440,7 @@ async function loadRepairDashboard() {
         html += '<h3 class="repair-section-title">최근 수리 이력</h3>';
         html += '<div class="repair-history-list">';
         for (const record of recentRecords) {
+            const costHtml = record.cost > 0 ? `<span class="repair-history-cost">${formatCost(record.cost)}원</span>` : '';
             html += `
                 <div class="repair-history-item">
                     <div class="repair-history-date">${record.date}</div>
@@ -392,6 +448,7 @@ async function loadRepairDashboard() {
                         <span class="repair-history-team">${teamNames[record.sheet] || record.sheet}</span>
                         <span class="repair-history-equip">${record.equipment}</span>
                         <span class="repair-history-type">${record.type}</span>
+                        ${costHtml}
                     </div>
                     ${record.notes ? `<div class="repair-history-notes">${record.notes}</div>` : ''}
                 </div>`;
@@ -843,6 +900,19 @@ function loadInspectionItems() {
             <div class="item-status" style="padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; background-color: #e0e0e0; color: #666;">미선택</div>
         `;
         
+        if (isRepairItem) {
+            const costContainer = document.createElement('div');
+            costContainer.className = 'repair-cost-input-container';
+            costContainer.style.cssText = 'display: none; margin-top: 0.75rem; padding: 1rem; background-color: #fff8e1; border: 1px solid #FFE0B2; border-radius: 6px;';
+            costContainer.innerHTML = `
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E65100; margin-bottom: 0.5rem;">수리 금액 (원)</label>
+                <input type="number" id="repair-cost-input" placeholder="예: 150000" min="0"
+                    style="width: 100%; padding: 0.7rem; border: 2px solid #FFE0B2; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #fff;"
+                    oninput="updateRepairCost(this.value)">
+            `;
+            itemDiv.after(costContainer);
+        }
+
         itemDiv.addEventListener('click', () => {
             const statusEl = itemDiv.querySelector('.item-status');
             if (itemDiv.classList.contains('completed')) {
@@ -854,12 +924,25 @@ function loadInspectionItems() {
                 statusEl.style.color = '#666';
                 const index = inspectionData.inspections.findIndex(r => r.item === item);
                 if (index !== -1) inspectionData.inspections.splice(index, 1);
+                if (isRepairItem) {
+                    const costBox = itemDiv.nextElementSibling;
+                    if (costBox && costBox.className === 'repair-cost-input-container') {
+                        costBox.style.display = 'none';
+                        const inp = costBox.querySelector('input');
+                        if (inp) inp.value = '';
+                    }
+                    inspectionData.repairCost = 0;
+                }
             } else {
                 itemDiv.classList.add('completed');
                 if (isRepairItem) {
                     itemDiv.style.background = 'linear-gradient(135deg, #FFA726 0%, #FF9800 100%)';
                     statusEl.textContent = '수리 진행';
                     statusEl.style.backgroundColor = '#FF9800';
+                    const costBox = itemDiv.nextElementSibling;
+                    if (costBox && costBox.className === 'repair-cost-input-container') {
+                        costBox.style.display = 'block';
+                    }
                 } else {
                     itemDiv.style.background = 'linear-gradient(135deg, #64B5F6 0%, #42A5F5 100%)';
                     statusEl.textContent = '점검완료';
@@ -930,6 +1013,10 @@ function loadInspectionItems() {
     updateInspectionSelectionInfo();
 }
 
+function updateRepairCost(value) {
+    inspectionData.repairCost = parseInt(value) || 0;
+}
+
 function confirmOtherItem() {
     const otherInput = document.getElementById('other-input');
     const otherHeader = document.getElementById('other-inspection-item').querySelector('div:first-child');
@@ -977,12 +1064,17 @@ async function submitInspection() {
     
     const hasRepair = inspectionData.inspections.some(r => r.item === '수리 진행');
 
+    let notesWithCost = inspectionData.notes || '';
+    if (hasRepair && inspectionData.repairCost > 0) {
+        notesWithCost = `[수리금액:${inspectionData.repairCost}]${notesWithCost ? ' ' + notesWithCost : ''}`;
+    }
+
     for (const equipmentName of equipmentList) {
         const data = {
             type: inspectionData.type,
             equipment: equipmentName,
             inspections: inspectionData.inspections,
-            notes: inspectionData.notes
+            notes: hasRepair ? notesWithCost : inspectionData.notes
         };
         
         try {
