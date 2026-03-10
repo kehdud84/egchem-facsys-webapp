@@ -502,8 +502,8 @@ async function loadRepairDashboard() {
         html += makeLine(monthlyData[currentYear], '#FF9800');
         html += '</svg>';
         html += '<div class="repair-line-legend">';
-        html += `<span class="repair-legend-item"><span class="repair-legend-dot" style="background:#FF9800;"></span>${currentYear}년</span>`;
         html += `<span class="repair-legend-item"><span class="repair-legend-dot" style="background:#90CAF9;"></span>${prevYear}년</span>`;
+        html += `<span class="repair-legend-item"><span class="repair-legend-dot" style="background:#FF9800;"></span>${currentYear}년</span>`;
         html += '</div>';
         html += '</div></div>';
     }
