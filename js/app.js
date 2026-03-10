@@ -900,17 +900,17 @@ function loadInspectionItems() {
             <div class="item-status" style="padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; background-color: #e0e0e0; color: #666;">미선택</div>
         `;
         
+        let costContainer = null;
         if (isRepairItem) {
-            const costContainer = document.createElement('div');
+            costContainer = document.createElement('div');
             costContainer.className = 'repair-cost-input-container';
-            costContainer.style.cssText = 'display: none; margin-top: 0.75rem; padding: 1rem; background-color: #fff8e1; border: 1px solid #FFE0B2; border-radius: 6px;';
+            costContainer.style.cssText = 'display: none; margin-top: -0.5rem; margin-bottom: 1rem; padding: 1rem; background-color: #fff8e1; border: 1px solid #FFE0B2; border-radius: 6px;';
             costContainer.innerHTML = `
                 <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #E65100; margin-bottom: 0.5rem;">수리 금액 (원)</label>
                 <input type="number" id="repair-cost-input" placeholder="예: 150000" min="0"
                     style="width: 100%; padding: 0.7rem; border: 2px solid #FFE0B2; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #fff;"
                     oninput="updateRepairCost(this.value)">
             `;
-            itemDiv.after(costContainer);
         }
 
         itemDiv.addEventListener('click', () => {
@@ -924,13 +924,10 @@ function loadInspectionItems() {
                 statusEl.style.color = '#666';
                 const index = inspectionData.inspections.findIndex(r => r.item === item);
                 if (index !== -1) inspectionData.inspections.splice(index, 1);
-                if (isRepairItem) {
-                    const costBox = itemDiv.nextElementSibling;
-                    if (costBox && costBox.className === 'repair-cost-input-container') {
-                        costBox.style.display = 'none';
-                        const inp = costBox.querySelector('input');
-                        if (inp) inp.value = '';
-                    }
+                if (isRepairItem && costContainer) {
+                    costContainer.style.display = 'none';
+                    const inp = costContainer.querySelector('input');
+                    if (inp) inp.value = '';
                     inspectionData.repairCost = 0;
                 }
             } else {
@@ -939,10 +936,7 @@ function loadInspectionItems() {
                     itemDiv.style.background = 'linear-gradient(135deg, #FFA726 0%, #FF9800 100%)';
                     statusEl.textContent = '수리 진행';
                     statusEl.style.backgroundColor = '#FF9800';
-                    const costBox = itemDiv.nextElementSibling;
-                    if (costBox && costBox.className === 'repair-cost-input-container') {
-                        costBox.style.display = 'block';
-                    }
+                    if (costContainer) costContainer.style.display = 'block';
                 } else {
                     itemDiv.style.background = 'linear-gradient(135deg, #64B5F6 0%, #42A5F5 100%)';
                     statusEl.textContent = '점검완료';
@@ -958,6 +952,7 @@ function loadInspectionItems() {
         });
         
         checkItems.appendChild(itemDiv);
+        if (costContainer) checkItems.appendChild(costContainer);
     });
     
     // "기타" 옵션
