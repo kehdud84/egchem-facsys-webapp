@@ -1111,10 +1111,31 @@ body {
 }
 
 .repair-bar-value {
-    min-width: 50px;
     font-weight: 700;
     font-size: 0.9rem;
     color: #555;
+    text-align: right;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.chart-count .repair-bar-value {
+    width: 45px;
+}
+
+.chart-cost .repair-bar-value {
+    width: 110px;
+}
+
+.chart-equip .repair-bar-value {
+    width: 45px;
+}
+
+.repair-bar-cost {
+    width: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #2E7D32;
     text-align: right;
     flex-shrink: 0;
     white-space: nowrap;
@@ -1413,8 +1434,24 @@ body {
     }
 
     .repair-bar-value {
-        min-width: 40px;
         font-size: 0.8rem;
+    }
+
+    .chart-count .repair-bar-value {
+        width: 40px;
+    }
+
+    .chart-cost .repair-bar-value {
+        width: 90px;
+    }
+
+    .chart-equip .repair-bar-value {
+        width: 40px;
+    }
+
+    .repair-bar-cost {
+        width: 80px;
+        font-size: 0.75rem;
     }
 
     .repair-history-notes {
