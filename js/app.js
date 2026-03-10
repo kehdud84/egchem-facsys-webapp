@@ -46,6 +46,7 @@ function selectSheet(sheetName) {
     inspectionData.equipment = [];
     inspectionData.inspections = [];
     inspectionData.notes = '';
+    inspectionData.repairCost = 0;
     loadEquipmentList();
     openDashboard();
 }
@@ -1186,14 +1187,8 @@ async function submitInspection() {
         }
 
         if (hasRepair) {
-            const repairRecord = repairTracker.addRecord(currentSheetName || '1-A', inspectionData.type, equipmentName, inspectionData.notes);
-            if (googleSheetsManager.webAppUrl && repairRecord) {
-                googleSheetsManager.addRepairRecord(repairRecord).then(() => {
-                    googleSheetsManager.clearCache();
-                }).catch(err => {
-                    console.warn('수리 기록 Google Sheets 저장 실패 (로컬 저장 완료):', err);
-                });
-            }
+            repairTracker.addRecord(currentSheetName || '1-A', inspectionData.type, equipmentName, notesWithCost);
+            googleSheetsManager.clearCache();
         }
     }
     
