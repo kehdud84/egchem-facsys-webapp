@@ -363,7 +363,7 @@ async function loadRepairDashboard() {
 
     html += '<div class="repair-section">';
     html += '<h3 class="repair-section-title">팀별 수리 건수</h3>';
-    html += '<div class="repair-bar-chart">';
+    html += '<div class="repair-bar-chart chart-count">';
     for (const team of teamCounts) {
         const pct = maxCount > 0 ? (team.total / maxCount) * 100 : 0;
         html += `
@@ -387,7 +387,7 @@ async function loadRepairDashboard() {
         const maxCost = Math.max(...teamCostData.map(t => t.totalCost), 1);
         html += '<div class="repair-section">';
         html += '<h3 class="repair-section-title">팀별 수리 금액</h3>';
-        html += '<div class="repair-bar-chart">';
+        html += '<div class="repair-bar-chart chart-cost">';
         for (const team of teamCostData) {
             const pct = maxCost > 0 ? (team.totalCost / maxCost) * 100 : 0;
             html += `
@@ -417,17 +417,18 @@ async function loadRepairDashboard() {
         const equipMax = equipRanking[0].count;
         html += '<div class="repair-section">';
         html += '<h3 class="repair-section-title">장비별 수리 건수 (상위 10)</h3>';
-        html += '<div class="repair-bar-chart">';
+        html += '<div class="repair-bar-chart chart-equip">';
         for (const eq of equipRanking) {
             const pct = equipMax > 0 ? (eq.count / equipMax) * 100 : 0;
-            const costLabel = eq.cost > 0 ? ` / ${formatCost(eq.cost)}원` : '';
+            const costLabel = eq.cost > 0 ? `<span class="repair-bar-cost">${formatCost(eq.cost)}원</span>` : '';
             html += `
                 <div class="repair-bar-row">
                     <div class="repair-bar-label">${eq.name}</div>
                     <div class="repair-bar-track">
                         <div class="repair-bar-fill equipment-bar" style="width: ${pct}%"></div>
                     </div>
-                    <div class="repair-bar-value">${eq.count}건${costLabel}</div>
+                    <div class="repair-bar-value">${eq.count}건</div>
+                    ${costLabel}
                 </div>`;
         }
         html += '</div></div>';
