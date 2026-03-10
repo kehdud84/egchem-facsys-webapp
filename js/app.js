@@ -417,7 +417,7 @@ async function loadRepairDashboard() {
                 <div class="repair-bar-group">
                     <div class="repair-bar-row">
                         <div class="repair-bar-label">${team.name}</div>
-                        <div class="repair-bar-track"><div class="repair-bar-fill cost-bar" style="width: ${pctCur}%"></div></div>
+                        <div class="repair-bar-track"><div class="repair-bar-fill" style="width: ${pctCur}%"></div></div>
                         <div class="repair-bar-value">${formatCost(teamCostCur[i])}원</div>
                     </div>
                     <div class="repair-bar-row prev">
