@@ -91,6 +91,68 @@ async function openDashboard() {
 }
 
 /* ========================================
+   점검 알림 (메인 화면 팀 카드 상태 표시)
+   - 일일점검 제외, 주간~연간 점검만 확인
+   - 모든 점검 완료 → 초록, 1개라도 미완료 → 빨강
+   ======================================== */
+async function checkTeamAlarms() {
+    const btn = document.querySelector('.btn-alarm-check');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '확인 중...';
+    }
+
+    const teams = [
+        { sheet: '1-A', cardId: 'site-card-1a' },
+        { sheet: '1-B', cardId: 'site-card-1b' },
+        { sheet: '1-C', cardId: 'site-card-1c' },
+        { sheet: '1-D', cardId: 'site-card-1d' },
+        { sheet: '1-E', cardId: 'site-card-1e' }
+    ];
+    const types = ['주간점검', '월간점검', '분기점검', '반기점검', '연간점검'];
+
+    try {
+        const results = await Promise.all(teams.map(async (team) => {
+            let allComplete = true;
+            for (const type of types) {
+                try {
+                    const rate = await calculateCompletionRate(type, team.sheet);
+                    if (rate.percentage < 100) {
+                        allComplete = false;
+                        break;
+                    }
+                } catch {
+                    allComplete = false;
+                    break;
+                }
+            }
+            return { cardId: team.cardId, allComplete };
+        }));
+
+        for (const { cardId, allComplete } of results) {
+            const card = document.getElementById(cardId);
+            if (!card) continue;
+            const dot = card.querySelector('.status-dot');
+            const label = card.querySelector('.site-status span');
+            if (dot) dot.style.backgroundColor = allComplete ? '#4CAF50' : '#f44336';
+            if (label) {
+                label.textContent = allComplete ? '완료' : '미완료';
+                label.style.color = allComplete ? '#4CAF50' : '#f44336';
+                label.style.fontWeight = '700';
+            }
+        }
+    } catch (error) {
+        console.error('점검 알림 확인 오류:', error);
+        alert('점검 상태 확인 중 오류가 발생했습니다.');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '점검 알림';
+        }
+    }
+}
+
+/* ========================================
    종합 현황 허브
    ======================================== */
 function openAllTeamsDashboard() {
