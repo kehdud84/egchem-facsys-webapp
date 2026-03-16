@@ -133,24 +133,43 @@ async function checkTeamAlarms() {
         const dot = card?.querySelector('.status-dot');
         const label = card?.querySelector('.site-status span');
 
-        let allComplete = true;
+        let worstStatus = 'normal';
         for (const type of types) {
+            if (worstStatus === 'alarm') break;
             try {
-                const rate = await calculateCompletionRate(type, team.sheet);
-                if (rate.percentage < 100) {
-                    allComplete = false;
-                    break;
+                const equipmentList = getEquipmentListForSheet(type, team.sheet);
+                const sheetEquipment = await googleSheetsManager.getEquipmentFromSheet(type, team.sheet);
+
+                for (const equipment of equipmentList) {
+                    const normalizedName = equipment.name.trim().toLowerCase();
+                    const sheetData = sheetEquipment?.find(se => se?.name?.trim().toLowerCase() === normalizedName);
+
+                    let status = 'alarm';
+                    if (sheetData && sheetData.lastInspectionDate) {
+                        let dateStr = sheetData.lastInspectionDate;
+                        if (dateStr instanceof Date) {
+                            dateStr = `${dateStr.getFullYear()}-${String(dateStr.getMonth()+1).padStart(2,'0')}-${String(dateStr.getDate()).padStart(2,'0')}`;
+                        } else if (typeof dateStr === 'string') {
+                            dateStr = dateStr.trim();
+                        }
+                        status = inspectionTimeManager.calculateAlarmStatusFromDate(type, dateStr);
+                    }
+
+                    if (status === 'alarm') { worstStatus = 'alarm'; break; }
+                    if (status === 'warning' && worstStatus === 'normal') worstStatus = 'warning';
                 }
             } catch {
-                allComplete = false;
+                worstStatus = 'alarm';
                 break;
             }
         }
 
-        if (dot) dot.style.backgroundColor = allComplete ? '#4CAF50' : '#f44336';
+        const colorMap = { normal: '#4CAF50', warning: '#FF9800', alarm: '#f44336' };
+        const textMap = { normal: '완료', warning: '점검 예정', alarm: '미완료' };
+        if (dot) dot.style.backgroundColor = colorMap[worstStatus];
         if (label) {
-            label.textContent = allComplete ? '완료' : '미완료';
-            label.style.color = allComplete ? '#4CAF50' : '#f44336';
+            label.textContent = textMap[worstStatus];
+            label.style.color = colorMap[worstStatus];
         }
 
         checkedCount++;
