@@ -92,7 +92,7 @@ body {
    점검 알림 버튼 (헤더)
    ======================================== */
 .btn-alarm-check {
-    background: linear-gradient(180deg, #FFC107 0%, #FFB300 30%, #FF9800 60%, #F57C00 100%);
+    background: linear-gradient(180deg, #FFB74D 0%, #FFA726 30%, #FF9800 60%, #F57C00 100%);
     color: white;
     border: 2px solid;
     border-top-color: rgba(255, 255, 255, 0.6);
@@ -102,7 +102,7 @@ body {
     padding: 0.4rem 0.8rem;
     border-radius: 4px;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow:
@@ -111,11 +111,12 @@ body {
         0 5px 10px rgba(245, 124, 0, 0.5),
         0 4px 8px rgba(0, 0, 0, 0.35),
         0 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
     transform: translateY(-2px);
 }
 
 .btn-alarm-check:hover {
-    background: linear-gradient(180deg, #FFD54F 0%, #FFC107 30%, #FFB300 60%, #FF9800 100%);
+    background: linear-gradient(180deg, #FFCC80 0%, #FFB74D 30%, #FFA726 60%, #FF9800 100%);
     box-shadow:
         inset 0 2px 5px rgba(255, 255, 255, 0.55),
         inset 0 -2px 5px rgba(0, 0, 0, 0.45),
