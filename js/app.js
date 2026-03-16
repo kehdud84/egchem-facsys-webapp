@@ -96,6 +96,11 @@ async function openDashboard() {
    - 모든 점검 완료 → 초록, 1개라도 미완료 → 빨강
    ======================================== */
 async function checkTeamAlarms() {
+    if (!googleSheetsManager.webAppUrl) {
+        alert('구글 시트 연결이 필요합니다.\n먼저 "연결" 버튼에서 설정해주세요.');
+        return;
+    }
+
     const btn = document.querySelector('.btn-alarm-check');
     if (btn) {
         btn.disabled = true;
@@ -111,44 +116,50 @@ async function checkTeamAlarms() {
     ];
     const types = ['주간점검', '월간점검', '분기점검', '반기점검', '연간점검'];
 
-    try {
-        const results = await Promise.all(teams.map(async (team) => {
-            let allComplete = true;
-            for (const type of types) {
-                try {
-                    const rate = await calculateCompletionRate(type, team.sheet);
-                    if (rate.percentage < 100) {
-                        allComplete = false;
-                        break;
-                    }
-                } catch {
+    for (const team of teams) {
+        const card = document.getElementById(team.cardId);
+        if (!card) continue;
+        const dot = card.querySelector('.status-dot');
+        const label = card.querySelector('.site-status span');
+        if (dot) dot.style.backgroundColor = '#FFC107';
+        if (label) { label.textContent = '확인 중...'; label.style.color = '#FFC107'; label.style.fontWeight = '700'; }
+    }
+
+    let checkedCount = 0;
+    const totalTeams = teams.length;
+
+    await Promise.all(teams.map(async (team) => {
+        const card = document.getElementById(team.cardId);
+        const dot = card?.querySelector('.status-dot');
+        const label = card?.querySelector('.site-status span');
+
+        let allComplete = true;
+        for (const type of types) {
+            try {
+                const rate = await calculateCompletionRate(type, team.sheet);
+                if (rate.percentage < 100) {
                     allComplete = false;
                     break;
                 }
+            } catch {
+                allComplete = false;
+                break;
             }
-            return { cardId: team.cardId, allComplete };
-        }));
+        }
 
-        for (const { cardId, allComplete } of results) {
-            const card = document.getElementById(cardId);
-            if (!card) continue;
-            const dot = card.querySelector('.status-dot');
-            const label = card.querySelector('.site-status span');
-            if (dot) dot.style.backgroundColor = allComplete ? '#4CAF50' : '#f44336';
-            if (label) {
-                label.textContent = allComplete ? '완료' : '미완료';
-                label.style.color = allComplete ? '#4CAF50' : '#f44336';
-                label.style.fontWeight = '700';
-            }
+        if (dot) dot.style.backgroundColor = allComplete ? '#4CAF50' : '#f44336';
+        if (label) {
+            label.textContent = allComplete ? '완료' : '미완료';
+            label.style.color = allComplete ? '#4CAF50' : '#f44336';
         }
-    } catch (error) {
-        console.error('점검 알림 확인 오류:', error);
-        alert('점검 상태 확인 중 오류가 발생했습니다.');
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = '점검 알림';
-        }
+
+        checkedCount++;
+        if (btn) btn.textContent = `확인 중 (${checkedCount}/${totalTeams})`;
+    }));
+
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = '점검 알림';
     }
 }
 
