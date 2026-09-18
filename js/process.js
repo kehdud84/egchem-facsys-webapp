@@ -22,10 +22,12 @@ const PRODUCT_CODES = {
     'TEMAZ':  { code: 'TEMAZ',  useLine: false }
 };
 
-// 반응기 — 끝자리 01·02는 합성, 03·04는 정제
+// 반응기
 const REACTORS_BY_PROCESS = {
     '합성': ['EGR-101', 'EGR-102', 'EGR-201', 'EGR-202', 'EGR-301', 'EGR-401', 'EGR-501'],
-    '정제': ['EGR-303', 'EGR-304', 'EGR-403', 'EGR-404', 'EGR-503', 'EGR-504']
+    '정제': ['EGR-303', 'EGR-304', 'EGR-403', 'EGR-404', 'EGR-503', 'EGR-504',
+             'EGR-601', 'EGR-602', 'EGR-603', 'EGR-604',
+             'EGR-801', 'EGR-802', 'EGR-803', 'EGR-804']
 };
 
 const PROCESS_LETTER = { '합성': 'A', '정제': 'S' };
@@ -41,7 +43,11 @@ let entry = {
     seq: 1,              // 그 달의 회차
     steps: null,         // 레시피 단계 (화면에 그리기 좋게 다듬어진 것)
     editing: false,      // 레시피 고치는 중인지
-    editRows: null       // 고치기용 — 시트 칸 그대로 + 줄 번호
+    editRows: null,      // 고치기용 — 시트 칸 그대로 + 줄 번호
+    allLots: null,       // 그 제품의 Lot 전부(끝난 것 포함) — 정제 번호를 셀 때 쓴다
+    source: null,        // 정제할 원래 Lot {lotNo, process}
+    sourceMode: '',      // 'pick' | 'manual'
+    lotFilter: ''        // Lot 고르기 검색어
 };
 
 /* ----------------------------------------
@@ -67,6 +73,35 @@ function lotCodePrefix(product, reactor) {
     return `${conf.code}${line}${yy}-${mm}`;
 }
 
+/* ----------------------------------------
+   정제 Lot 번호
+   합성 Lot 뒤에 붙는다. 갈아 끼우는 게 아니라 이어 붙인다.
+     DPS426-0801-A01        합성
+     DPS426-0801-A01-S01    1차 정제
+     DPS426-0801-A01-S02    2차 정제   ← 앞의 S01을 지우지 않는다
+   ★ 몇 차인지는 시트에 이미 있는 번호를 세어서 정한다. 따로 저장하지 않는다 —
+     저장해 두면 관리자가 줄을 지웠을 때 조용히 어긋난다.
+   ---------------------------------------- */
+function escRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+/** 'DPS426-0801-A01-S02' → 'DPS426-0801-A01' */
+function purifyBase(lotNo) {
+    return String(lotNo || '').trim().replace(/-S\d+$/i, '');
+}
+
+/** 그 Lot을 정제하면 붙을 다음 번호 */
+function nextPurifyNo(lotNo, allLots) {
+    const base = purifyBase(lotNo);
+    if (!base) return '';
+    const re = new RegExp('^' + escRe(base) + '-S(\\d+)$', 'i');
+    let max = 0;
+    (allLots || []).forEach(l => {
+        const m = re.exec(String(l.lotNo || '').trim());
+        if (m) { const n = parseInt(m[1], 10); if (n > max) max = n; }
+    });
+    return base + '-S' + String(max + 1).padStart(2, '0');
+}
+
 function makeLotNo(product, process, reactor, seq) {
     const d = todayKSTDate();
     const dd = String(d.getDate()).padStart(2, '0');
@@ -80,7 +115,8 @@ function makeLotNo(product, process, reactor, seq) {
    ---------------------------------------- */
 async function openProductEntry() {
     entry = { products: entry.products, product: '', process: '', reactor: '', seq: 1,
-              steps: null, editing: false, editRows: null };
+              steps: null, editing: false, editRows: null,
+              allLots: null, source: null, sourceMode: '', lotFilter: '' };
     showScreen('product-entry-screen', 'process');
     renderEntry();
 
@@ -136,6 +172,8 @@ function addRetryButton(statusId, fnName) {
 function renderEntry() {
     renderEntryProducts();
     renderEntryProcesses();
+    renderEntrySource();
+    renderEntryStepNumbers();
     renderEntryReactors();
     renderEntryLot();
     renderEntryRecipe();
@@ -174,7 +212,9 @@ function renderEntryReactors() {
     const box = document.getElementById('entry-reactors');
     if (!step || !box) return;
 
-    if (!entry.process) { step.style.display = 'none'; box.innerHTML = ''; return; }
+    // 정제는 「무엇을 정제하는지」부터 고르고 나서 반응기를 보여 준다.
+    const ready = entry.process && (entry.process !== '정제' || entry.sourceMode);
+    if (!ready) { step.style.display = 'none'; box.innerHTML = ''; return; }
     step.style.display = 'block';
 
     const list = REACTORS_BY_PROCESS[entry.process] || [];
@@ -187,6 +227,7 @@ function renderEntryReactors() {
 function renderEntryLot() {
     const step = document.getElementById('entry-step-lot');
     const input = document.getElementById('entry-lot');
+    const hint = document.getElementById('entry-lot-hint');
     if (!step || !input) return;
 
     if (!entry.reactor) { step.style.display = 'none'; return; }
@@ -194,8 +235,98 @@ function renderEntryLot() {
 
     // 사용자가 직접 고친 번호는 건드리지 않는다.
     if (!input.dataset.touched) {
-        input.value = makeLotNo(entry.product, entry.process, entry.reactor, entry.seq || 1);
+        if (entry.process === '정제') {
+            input.value = entry.source ? nextPurifyNo(entry.source.lotNo, entry.allLots) : '';
+        } else {
+            input.value = makeLotNo(entry.product, entry.process, entry.reactor, entry.seq || 1);
+        }
     }
+
+    if (hint && entry.process === '정제') {
+        hint.textContent = entry.source
+            ? `${entry.source.lotNo} 을(를) 정제합니다. 필요하면 번호를 고치셔도 됩니다.`
+            : '밖에서 온 Crude는 번호를 직접 적어 주세요.';
+    }
+}
+
+/* ----------------------------------------
+   정제할 Lot 고르기
+   「몇 차 정제인가」를 사람이 세지 않게 한다 — 시트에 있는 번호를 앱이 센다.
+   ---------------------------------------- */
+function renderEntryStepNumbers() {
+    const pur = (entry.process === '정제');
+    const setNum = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+    setNum('entry-num-reactor', pur ? 4 : 3);
+    setNum('entry-num-lot',     pur ? 5 : 4);
+}
+
+function renderEntrySource() {
+    const step = document.getElementById('entry-step-source');
+    const box = document.getElementById('entry-sources');
+    if (!step || !box) return;
+
+    if (entry.process !== '정제') { step.style.display = 'none'; box.innerHTML = ''; return; }
+    step.style.display = 'block';
+
+    if (!entry.allLots) {
+        box.innerHTML = '<div class="recipe-empty">Lot을 불러오는 중…</div>';
+        return;
+    }
+
+    const manual = `<button type="button" class="src-card manual${entry.sourceMode === 'manual' ? ' on' : ''}"
+              onclick="pickSourceManual()">
+              <div class="src-no">직접 입력</div>
+              <div class="src-meta">밖에서 온 Crude처럼 앞 Lot이 없을 때</div>
+            </button>`;
+
+    const q = (entry.lotFilter || '').trim().toLowerCase();
+    const list = entry.allLots.filter(l => !q || String(l.lotNo).toLowerCase().includes(q));
+
+    if (!list.length) {
+        box.innerHTML = (entry.allLots.length
+            ? '<div class="recipe-empty">찾는 Lot이 없습니다.</div>'
+            : '<div class="recipe-empty">이 제품에 등록된 Lot이 아직 없습니다.</div>') + manual;
+        return;
+    }
+
+    // 너무 많으면 화면이 무거워진다. 최근 것부터 40개만 — 나머지는 검색으로.
+    box.innerHTML = list.slice(0, 40).map(l => {
+        const on = entry.sourceMode === 'pick' && entry.source &&
+                   entry.source.lotNo === l.lotNo && entry.source.process === l.process;
+        return `<button type="button" class="src-card${on ? ' on' : ''}"
+                  onclick="pickSource('${esc(l.lotNo)}','${esc(l.process)}')">
+                  <div class="src-no">${esc(l.lotNo)}</div>
+                  <div class="src-meta">${esc(l.process)} · ${esc(l.reactor)} · ${l.done ? '완료' : '진행 중'}</div>
+                  <div class="src-next">→ ${esc(nextPurifyNo(l.lotNo, entry.allLots))}</div>
+                </button>`;
+    }).join('') + manual +
+    (list.length > 40 ? '<div class="entry-hint">40개만 보입니다. 위 칸에 번호를 쳐서 찾으세요.</div>' : '');
+}
+
+function filterSourceLots(v) {
+    entry.lotFilter = v;
+    renderEntrySource();
+}
+
+function clearSourcePick() {
+    entry.source = null;
+    entry.sourceMode = '';
+    entry.reactor = '';
+    const input = document.getElementById('entry-lot');
+    if (input) { delete input.dataset.touched; input.value = ''; }
+}
+
+function pickSource(lotNo, process) {
+    clearSourcePick();
+    entry.source = { lotNo, process };
+    entry.sourceMode = 'pick';
+    renderEntry();
+}
+
+function pickSourceManual() {
+    clearSourcePick();
+    entry.sourceMode = 'manual';
+    renderEntry();
 }
 
 // 그 달의 다음 회차를 시트에서 세어 온다.
@@ -278,8 +409,9 @@ function updateEntrySubmit() {
     const btn = document.getElementById('entry-submit');
     if (!btn) return;
     const lot = (document.getElementById('entry-lot') || {}).value || '';
+    const sourceOk = entry.process !== '정제' || !!entry.sourceMode;
     const ready = entry.product && entry.process && entry.reactor && lot.trim()
-                  && entry.steps && !entry.editing;
+                  && entry.steps && sourceOk && !entry.editing;
     btn.disabled = !ready;
 }
 
@@ -293,6 +425,10 @@ function pickProduct(product) {
     entry.steps = null;
     entry.editing = false;      // 제품이 바뀌면 고치던 것은 버린다
     entry.editRows = null;
+    entry.allLots = null;       // 제품이 바뀌면 Lot 목록도 다시 받아야 한다
+    entry.source = null;
+    entry.sourceMode = '';
+    entry.lotFilter = '';
     const input = document.getElementById('entry-lot');
     if (input) { delete input.dataset.touched; input.value = ''; }
     renderEntry();
@@ -304,6 +440,11 @@ async function pickProcess(process) {
     entry.steps = null;
     entry.editing = false;
     entry.editRows = null;
+    entry.source = null;
+    entry.sourceMode = '';
+    entry.lotFilter = '';
+    const filter = document.getElementById('entry-lot-filter');
+    if (filter) filter.value = '';
     const input = document.getElementById('entry-lot');
     if (input) { delete input.dataset.touched; input.value = ''; }
     renderEntry();
@@ -317,6 +458,22 @@ async function pickProcess(process) {
         entry.steps = null;
     }
     renderEntry();
+
+    // 정제는 무엇을 정제하는지 골라야 한다 — 그 제품의 Lot을 끝난 것까지 다 받아 온다.
+    if (process === '정제') await loadEntryLots();
+}
+
+/** 그 제품의 Lot 전부. 정제 차수를 세는 데도 쓰이므로 끝난 것까지 받는다. */
+async function loadEntryLots(force) {
+    if (entry.allLots && !force) { renderEntry(); return; }
+    renderEntry();
+    try {
+        entry.allLots = await googleSheetsManager.getLots(entry.product, true);
+    } catch (err) {
+        entry.allLots = [];
+        setEntryStatus(`Lot 목록을 불러오지 못했습니다.\n${err.message}`, true);
+    }
+    renderEntry();
 }
 
 function pickReactor(reactor) {
@@ -324,7 +481,8 @@ function pickReactor(reactor) {
     const input = document.getElementById('entry-lot');
     if (input) delete input.dataset.touched;   // 반응기가 바뀌면 라인 숫자도 바뀐다
     renderEntry();
-    fillNextSeq();
+    // 「그 달의 회차」는 합성 번호에만 쓰인다. 정제 번호는 앞 Lot에서 나온다.
+    if (entry.process === '합성') fillNextSeq();
 }
 
 /* ----------------------------------------
@@ -342,18 +500,37 @@ async function submitProductEntry() {
     btn.textContent = '등록 중…';
 
     try {
-        await googleSheetsManager.registerLot(
-            entry.product, entry.process, lot, entry.reactor
-        );
+        if (entry.process === '정제' && entry.source) {
+            // 계보 줄까지 같이 남긴다 — 「어느 Lot에서 왔는지」가 있어야
+            // 진행 화면에서 투입 Lot이 저절로 채워진다.
+            await googleSheetsManager.nextLot(
+                entry.product, entry.source.lotNo, entry.source.process,
+                '정제', lot, entry.reactor
+            );
+        } else {
+            await googleSheetsManager.registerLot(
+                entry.product, entry.process, lot, entry.reactor
+            );
+        }
         alert(
             '✅ Lot이 등록되었습니다.\n\n' +
             `${lot}\n` +
-            `${entry.product} · ${entry.process} · ${entry.reactor}\n\n` +
-            '「공정 진행」에서 이 Lot을 눌러 단계를 시작하시면 됩니다.'
+            `${entry.product} · ${entry.process} · ${entry.reactor}\n` +
+            (entry.source ? `투입 Lot: ${entry.source.lotNo}\n` : '') +
+            '\n「공정 진행」에서 이 Lot을 눌러 단계를 시작하시면 됩니다.'
         );
         // 다음 Lot을 이어서 등록하기 쉽게 제품·공정은 남기고 번호만 새로 받는다.
         delete input.dataset.touched;
-        await fillNextSeq();
+        if (entry.process === '정제') {
+            // 방금 만든 것까지 세어야 다음 차수가 맞는다.
+            entry.source = null;
+            entry.sourceMode = '';
+            entry.reactor = '';
+            input.value = '';
+            await loadEntryLots(true);
+        } else {
+            await fillNextSeq();
+        }
     } catch (err) {
         alert('등록하지 못했습니다.\n\n' + err.message);
     } finally {

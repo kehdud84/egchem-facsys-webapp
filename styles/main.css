@@ -2288,3 +2288,84 @@ body {
 }
 .in-row.known .in-val:focus { border-color: #26A69A; background-color: #fff; color: #222; }
 .in-val.mono { font-family: 'Consolas', 'Menlo', monospace; font-size: 0.95rem; }
+
+/* ========================================
+   정제할 Lot 고르기
+   ======================================== */
+
+.src-filter {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: 'Consolas', 'Menlo', monospace;
+    font-size: 0.95rem;
+    padding: 0.6rem 0.75rem;
+    border: 2px solid #dfe3e4;
+    border-radius: 6px;
+    background-color: #fff;
+    color: #222;
+    min-height: 44px;
+    margin-bottom: 0.6rem;
+}
+
+.src-filter:focus { outline: none; border-color: #26A69A; }
+
+.src-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    max-height: 21rem;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+}
+
+.src-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "no next" "meta next";
+    gap: 0.15rem 0.7rem;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    background: linear-gradient(180deg, #ffffff 0%, #fafbfb 100%);
+    border: 2px solid #dfe3e4;
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 52px;
+    transition: all 0.15s ease;
+}
+
+.src-card:hover { border-color: #26A69A; }
+
+.src-card.on {
+    border-color: #17756D;
+    background: linear-gradient(180deg, #E6F6F4 0%, #D6F0EC 100%);
+}
+
+.src-no {
+    grid-area: no;
+    font-family: 'Consolas', 'Menlo', monospace;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #222;
+}
+
+.src-meta { grid-area: meta; font-size: 0.78rem; color: #888; font-weight: 600; }
+
+.src-next {
+    grid-area: next;
+    font-family: 'Consolas', 'Menlo', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #16746B;
+    white-space: nowrap;
+}
+
+.src-card.manual { grid-template-areas: "no no" "meta meta"; }
+.src-card.manual .src-no { color: #666; font-family: inherit; }
+
+@media (max-width: 768px) {
+    .src-card { grid-template-columns: 1fr; grid-template-areas: "no" "meta" "next"; }
+    .src-next { text-align: right; }
+}

@@ -596,10 +596,12 @@ class GoogleSheetsManager {
        공정 진행 (2026-08-28 추가)
        ---------------------------------------- */
 
-    // 아직 안 끝난 Lot들과 진행 상태
-    async getLots(product) {
+    // Lot들과 진행 상태. includeDone을 주면 끝난 것까지 온다.
+    // (정제 차수를 세려면 끝난 Lot도 봐야 한다 — 1차가 끝났으니 2차를 하는 것이다)
+    async getLots(product, includeDone) {
         if (!this.webAppUrl) throw new Error('웹앱 URL이 설정되지 않았습니다.');
         const params = new URLSearchParams({ action: 'getLots', product });
+        if (includeDone) params.set('includeDone', 'true');
         const result = await this._jsonpRequest(params, TIMEOUT_READ);
         if (result && result.success) return result.data || [];
         throw new Error(result?.error || 'Lot 목록을 가져오지 못했습니다');

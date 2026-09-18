@@ -6,7 +6,8 @@
 
 let run = {
     product: '',
-    lots: null,        // [{lotNo, process, reactor, at, doneSteps, started, waiting, from}]
+    lots: null,        // 진행 중인 것만 — 카드 목록에 쓴다
+    allLots: null,     // 끝난 것까지 전부 — 정제 차수를 셀 때 쓴다
     recipes: {},       // '제품|공정' → 단계 배열
     lot: null,         // 지금 열어 놓은 Lot
     steps: null,       // 그 Lot의 레시피
@@ -122,6 +123,7 @@ function renderRunProducts() {
 function pickRunProduct(product) {
     run.product = product;
     run.lots = null;
+    run.allLots = null;
     renderRunProducts();
     loadRunLots();
 }
@@ -134,9 +136,13 @@ async function loadRunLots() {
     setRunStatus('Lot을 불러오는 중…');
     renderRunLots();
     try {
-        run.lots = await googleSheetsManager.getLots(run.product);
+        // 끝난 것까지 한 번에 받아 온다. 카드에는 진행 중인 것만 보이지만,
+        // 정제 번호를 세려면 이미 끝난 S01도 알아야 한다.
+        run.allLots = await googleSheetsManager.getLots(run.product, true);
+        run.lots = run.allLots.filter(l => !l.done);
         setRunStatus('');
     } catch (err) {
+        run.allLots = [];
         run.lots = [];
         setRunStatus(`Lot 목록을 불러오지 못했습니다.\n${err.message}`, true);
     }
@@ -770,13 +776,14 @@ async function submitConcentrate(order) {
    공정 완료 · 다음 공정 Lot
    ══════════════════════════════════════════ */
 
-/** DPS526-0828-A01 → S01,  DPS526-0828-S01 → S02 */
+/**
+ * 다음 정제 번호. 규칙은 process.js의 nextPurifyNo()에 있다.
+ *   DPS426-0801-A01      → DPS426-0801-A01-S01
+ *   DPS426-0801-A01-S01  → DPS426-0801-A01-S02
+ * 몇 차인지는 시트에 이미 있는 번호를 세어서 정한다.
+ */
 function nextProcessLotNo(lotNo) {
-    const m = String(lotNo).match(/^(.*-)([A-Z]+)(\d+)$/);
-    if (!m) return lotNo + '-S01';
-    const head = m[1], letter = m[2], n = parseInt(m[3], 10);
-    if (letter === 'A') return head + 'S01';
-    return head + 'S' + String(n + 1).padStart(2, '0');
+    return nextPurifyNo(lotNo, run.allLots || run.lots);
 }
 
 function renderRunFinish() {
