@@ -2369,3 +2369,12 @@ body {
     .src-card { grid-template-columns: 1fr; grid-template-areas: "no" "meta" "next"; }
     .src-next { text-align: right; }
 }
+
+/* 「다른 반응기 보기」 — 고르는 버튼이 아니라 펼치는 버튼이라는 걸 보이게 */
+.pick-btn.more {
+    background: none;
+    border-style: dashed;
+    color: #888;
+    font-weight: 500;
+}
+.pick-btn.more:hover { border-color: #26A69A; color: #16746B; }

@@ -14,6 +14,7 @@ let run = {
     nextOpen: false,   // 「다음 Lot 만들기」 칸을 펼쳤는지
     nextReactor: '',
     locked: false,     // 남이 잠가 둔 걸 알고도 들어왔는지
+    showAllReactors: false,  // 줄여 놓은 반응기 목록을 펼쳤는지
     beat: null         // 잠금 연장 타이머
 };
 
@@ -243,6 +244,7 @@ async function openLotRun(lotNo, process) {
     run.lot = lot;
     run.nextOpen = false;
     run.nextReactor = '';
+    run.showAllReactors = false;
     run.steps = null;
     showScreen('run-lot-screen', 'process');
     renderLotRun();
@@ -826,9 +828,14 @@ function toggleNextPanel() {
 function renderNextPanel() {
     const L = run.lot;
     const suggested = nextProcessLotNo(L.lotNo);
-    const list = (REACTORS_BY_PROCESS['정제'] || []).map(r =>
+    // 제품마다 쓰는 정제 반응기만 보여 준다(process.js의 표). 나머지는 접어 둔다.
+    let list = reactorsFor(run.product, '정제', run.showAllReactors).map(r =>
         `<button type="button" class="pick-btn mono${r === run.nextReactor ? ' on' : ''}"
                  onclick="pickNextReactor('${esc(r)}')">${esc(r)}</button>`).join('');
+    if (!run.showAllReactors && hasHiddenReactors(run.product, '정제')) {
+        list += `<button type="button" class="pick-btn more"
+                         onclick="showAllNextReactors()">다른 반응기 보기</button>`;
+    }
 
     return `<div class="next-panel">
               <div class="entry-label">다음 Lot 번호</div>
@@ -850,6 +857,11 @@ function renderNextPanel() {
 
 function pickNextReactor(r) {
     run.nextReactor = r;
+    renderRunFinish();
+}
+
+function showAllNextReactors() {
+    run.showAllReactors = true;
     renderRunFinish();
 }
 

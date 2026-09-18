@@ -27,10 +27,43 @@ const REACTORS_BY_PROCESS = {
     '합성': ['EGR-101', 'EGR-102', 'EGR-201', 'EGR-202', 'EGR-301', 'EGR-401', 'EGR-501'],
     '정제': ['EGR-303', 'EGR-304', 'EGR-403', 'EGR-404', 'EGR-503', 'EGR-504',
              'EGR-601', 'EGR-602', 'EGR-603', 'EGR-604',
+             'EGR-701', 'EGR-702', 'EGR-703', 'EGR-704',
              'EGR-801', 'EGR-802', 'EGR-803', 'EGR-804']
 };
 
 const PROCESS_LETTER = { '합성': 'A', '정제': 'S' };
+
+/* ----------------------------------------
+   제품마다 쓰는 정제 반응기.
+   열넷을 다 늘어놓으면 휴대폰에서 훑기 힘들고 엉뚱한 걸 고르기도 쉽다.
+   ★ 여기 안 적힌 제품은 열넷 전부를 보여 준다 — 아직 안 정해진 것뿐이므로
+     막아 두면 등록 자체를 못 한다.
+   ★ 적혀 있어도 「다른 반응기 보기」로 나머지를 펼칠 수 있다.
+     표가 틀렸다는 이유로 현장이 멈추면 안 된다.
+   ---------------------------------------- */
+const PURIFY_REACTORS_BY_PRODUCT = {
+    'DIPAS': ['EGR-403', 'EGR-404', 'EGR-503', 'EGR-504'],
+    'BDEAS': ['EGR-303', 'EGR-304'],
+    'ZAC':   ['EGR-701', 'EGR-702', 'EGR-703', 'EGR-704',
+              'EGR-801', 'EGR-802', 'EGR-803', 'EGR-804']
+    // HAC · NABAL · TDMATi · BTBAS · TEMAZ 는 아직 안 정해져서 전부 보인다
+};
+
+/** 그 제품·공정에서 보여 줄 반응기 */
+function reactorsFor(product, process, showAll) {
+    const all = REACTORS_BY_PROCESS[process] || [];
+    if (showAll || process !== '정제') return all;
+    const picked = PURIFY_REACTORS_BY_PRODUCT[product];
+    return (picked && picked.length) ? picked : all;
+}
+
+/** 「다른 반응기 보기」를 붙일지 — 줄여 놓은 게 있을 때만 */
+function hasHiddenReactors(product, process) {
+    if (process !== '정제') return false;
+    const picked = PURIFY_REACTORS_BY_PRODUCT[product];
+    return !!(picked && picked.length &&
+              picked.length < (REACTORS_BY_PROCESS['정제'] || []).length);
+}
 
 /* ----------------------------------------
    지금 고르고 있는 것
@@ -47,6 +80,7 @@ let entry = {
     allLots: null,       // 그 제품의 Lot 전부(끝난 것 포함) — 정제 번호를 셀 때 쓴다
     source: null,        // 정제할 원래 Lot {lotNo, process}
     sourceMode: '',      // 'pick' | 'manual'
+    showAllReactors: false,  // 줄여 놓은 반응기 목록을 펼쳤는지
     lotFilter: ''        // Lot 고르기 검색어
 };
 
@@ -116,7 +150,8 @@ function makeLotNo(product, process, reactor, seq) {
 async function openProductEntry() {
     entry = { products: entry.products, product: '', process: '', reactor: '', seq: 1,
               steps: null, editing: false, editRows: null,
-              allLots: null, source: null, sourceMode: '', lotFilter: '' };
+              allLots: null, source: null, sourceMode: '', lotFilter: '',
+              showAllReactors: false };
     showScreen('product-entry-screen', 'process');
     renderEntry();
 
@@ -217,11 +252,22 @@ function renderEntryReactors() {
     if (!ready) { step.style.display = 'none'; box.innerHTML = ''; return; }
     step.style.display = 'block';
 
-    const list = REACTORS_BY_PROCESS[entry.process] || [];
-    box.innerHTML = list.map(r =>
+    const list = reactorsFor(entry.product, entry.process, entry.showAllReactors);
+    let html = list.map(r =>
         `<button type="button" class="pick-btn mono${r === entry.reactor ? ' on' : ''}"
                  onclick="pickReactor('${r}')">${r}</button>`
     ).join('');
+
+    if (!entry.showAllReactors && hasHiddenReactors(entry.product, entry.process)) {
+        html += `<button type="button" class="pick-btn more"
+                         onclick="showAllReactors()">다른 반응기 보기</button>`;
+    }
+    box.innerHTML = html;
+}
+
+function showAllReactors() {
+    entry.showAllReactors = true;
+    renderEntryReactors();
 }
 
 function renderEntryLot() {
@@ -443,6 +489,7 @@ async function pickProcess(process) {
     entry.source = null;
     entry.sourceMode = '';
     entry.lotFilter = '';
+    entry.showAllReactors = false;
     const filter = document.getElementById('entry-lot-filter');
     if (filter) filter.value = '';
     const input = document.getElementById('entry-lot');
