@@ -2378,3 +2378,15 @@ body {
     font-weight: 500;
 }
 .pick-btn.more:hover { border-color: #26A69A; color: #16746B; }
+
+/* 제품을 라인별로 묶어 보여 준다 */
+.prod-group { margin-bottom: 0.9rem; }
+.prod-group:last-child { margin-bottom: 0; }
+
+.prod-line {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #9aa0a1;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.4rem;
+}

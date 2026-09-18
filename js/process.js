@@ -34,35 +34,110 @@ const REACTORS_BY_PROCESS = {
 const PROCESS_LETTER = { '합성': 'A', '정제': 'S' };
 
 /* ----------------------------------------
-   제품마다 쓰는 정제 반응기.
-   열넷을 다 늘어놓으면 휴대폰에서 훑기 힘들고 엉뚱한 걸 고르기도 쉽다.
-   ★ 여기 안 적힌 제품은 열넷 전부를 보여 준다 — 아직 안 정해진 것뿐이므로
-     막아 두면 등록 자체를 못 한다.
-   ★ 적혀 있어도 「다른 반응기 보기」로 나머지를 펼칠 수 있다.
+   제품을 라인별로 묶어 보여 준다.
+   여덟 개를 한 줄로 늘어놓으면 어느 라인 것인지 안 보이고,
+   급할 때 옆 칸을 누른다. 라인이 다르면 아예 다른 설비다.
+   ★ 여기 없는 제품은 맨 아래 「기타」로 나온다 — 시트에 제품이 늘어도 사라지지 않게.
+   ---------------------------------------- */
+const PRODUCT_GROUPS = [
+    { line: '100 · 200 Line', products: ['ZAC', 'HAC', 'TEMAZ', 'TDMATi'] },
+    { line: '300 · 400 · 500 Line', products: ['DIPAS', 'NABAL', 'BDEAS', 'BTBAS'] }
+];
+
+/**
+ * 제품 버튼을 라인별로 묶은 HTML.
+ * 「제품 입력」과 「공정 진행」이 같은 걸 쓴다 — 두 화면이 달라 보이면 안 된다.
+ */
+function productGroupsHtml(products, selected, onclickFn) {
+    const names = (products || []).map(p => p.product);
+    const btn = n => `<button type="button" class="pick-btn${n === selected ? ' on' : ''}"
+                 onclick="${onclickFn}('${esc(n)}')">${esc(n)}</button>`;
+
+    const used = new Set();
+    let html = '';
+
+    PRODUCT_GROUPS.forEach(g => {
+        // 시트에 없는 제품은 버튼을 만들지 않는다(레시피가 없으면 못 쓴다)
+        const inGroup = g.products.filter(n => names.includes(n));
+        if (!inGroup.length) return;
+        inGroup.forEach(n => used.add(n));
+        html += `<div class="prod-group">
+                   <div class="prod-line">${esc(g.line)}</div>
+                   <div class="pick-row">${inGroup.map(btn).join('')}</div>
+                 </div>`;
+    });
+
+    const rest = names.filter(n => !used.has(n));
+    if (rest.length) {
+        html += `<div class="prod-group">
+                   <div class="prod-line">기타</div>
+                   <div class="pick-row">${rest.map(btn).join('')}</div>
+                 </div>`;
+    }
+    return html;
+}
+
+/* ----------------------------------------
+   어느 제품이 어느 반응기를 쓰는가.
+
+   찾는 차례가 셋이다 —
+     ① 제품마다 정해 둔 것         (DIPAS 합성 → 401·501)
+     ② 없으면 그 제품 라인의 것     (100·200 Line 합성 → 101·102·201·202)
+     ③ 그것도 없으면 전부
+
+   ★ 아직 안 정해진 것을 막아 두지 않는다. 막으면 등록 자체를 못 한다.
+   ★ 줄여 놨을 때는 「다른 반응기 보기」로 나머지를 펼칠 수 있다.
      표가 틀렸다는 이유로 현장이 멈추면 안 된다.
    ---------------------------------------- */
-const PURIFY_REACTORS_BY_PRODUCT = {
-    'DIPAS': ['EGR-403', 'EGR-404', 'EGR-503', 'EGR-504'],
-    'BDEAS': ['EGR-303', 'EGR-304'],
-    'ZAC':   ['EGR-701', 'EGR-702', 'EGR-703', 'EGR-704',
-              'EGR-801', 'EGR-802', 'EGR-803', 'EGR-804']
-    // HAC · NABAL · TDMATi · BTBAS · TEMAZ 는 아직 안 정해져서 전부 보인다
+const REACTORS_BY_LINE = {
+    '100 · 200 Line':       { '합성': ['EGR-101', 'EGR-102', 'EGR-201', 'EGR-202'] },
+    '300 · 400 · 500 Line': { '합성': ['EGR-301', 'EGR-401', 'EGR-501'] }
 };
+
+const REACTORS_BY_PRODUCT = {
+    'DIPAS': {
+        '합성': ['EGR-401', 'EGR-501'],
+        '정제': ['EGR-403', 'EGR-404', 'EGR-503', 'EGR-504']
+    },
+    'ZAC': {
+        '합성': ['EGR-101', 'EGR-201'],
+        '정제': ['EGR-701', 'EGR-702', 'EGR-703', 'EGR-704',
+                 'EGR-801', 'EGR-802', 'EGR-803', 'EGR-804']
+    },
+    'NABAL': {
+        '합성': ['EGR-301']
+    },
+    'BDEAS': {
+        '정제': ['EGR-303', 'EGR-304']
+    }
+    // HAC · TDMATi · BTBAS · TEMAZ 는 아직 안 정해져서 라인 기준으로만 걸러진다.
+    // 정제 위치가 없는 제품은 정제 반응기가 전부 보인다.
+};
+
+/** 그 제품이 속한 라인 이름 */
+function lineOf(product) {
+    const g = PRODUCT_GROUPS.find(g => g.products.includes(product));
+    return g ? g.line : '';
+}
 
 /** 그 제품·공정에서 보여 줄 반응기 */
 function reactorsFor(product, process, showAll) {
     const all = REACTORS_BY_PROCESS[process] || [];
-    if (showAll || process !== '정제') return all;
-    const picked = PURIFY_REACTORS_BY_PRODUCT[product];
-    return (picked && picked.length) ? picked : all;
+    if (showAll) return all;
+
+    const byProduct = (REACTORS_BY_PRODUCT[product] || {})[process];
+    if (byProduct && byProduct.length) return byProduct;
+
+    const byLine = (REACTORS_BY_LINE[lineOf(product)] || {})[process];
+    if (byLine && byLine.length) return byLine;
+
+    return all;
 }
 
 /** 「다른 반응기 보기」를 붙일지 — 줄여 놓은 게 있을 때만 */
 function hasHiddenReactors(product, process) {
-    if (process !== '정제') return false;
-    const picked = PURIFY_REACTORS_BY_PRODUCT[product];
-    return !!(picked && picked.length &&
-              picked.length < (REACTORS_BY_PROCESS['정제'] || []).length);
+    const all = REACTORS_BY_PROCESS[process] || [];
+    return reactorsFor(product, process, false).length < all.length;
 }
 
 /* ----------------------------------------
@@ -83,29 +158,6 @@ let entry = {
     showAllReactors: false,  // 줄여 놓은 반응기 목록을 펼쳤는지
     lotFilter: ''        // Lot 고르기 검색어
 };
-
-/* ----------------------------------------
-   Lot 번호 만들기
-   DPS526-0827-A01  =  코드 + 라인 + 연2자리 - 월일 - 공정문자 + 회차
-   ※ 회차(끝 두 자리)는 그 달의 몇 번째인지라 시트를 세어 봐야 안다.
-     반응기를 고르는 순간 백엔드에 물어서 채운다(fillNextSeq).
-     못 세어 오면 01로 두고 화면에 그 사실을 적는다 — 화면은 계속 돌아야 한다.
-   ---------------------------------------- */
-// 코드 + 라인 + 연2자리 + '-' + 월  (회차를 셀 때 쓰는 그 달의 접두사)
-function lotCodePrefix(product, reactor) {
-    const conf = PRODUCT_CODES[product] || { code: product, useLine: false };
-
-    let line = '';
-    if (conf.useLine && reactor) {
-        const m = String(reactor).match(/EGR-(\d)/);
-        if (m) line = m[1];
-    }
-
-    const d = todayKSTDate();
-    const yy = String(d.getFullYear()).slice(2);
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    return `${conf.code}${line}${yy}-${mm}`;
-}
 
 /* ----------------------------------------
    정제 Lot 번호
@@ -220,10 +272,7 @@ function renderEntryProducts() {
     if (!box) return;
     if (!entry.products) { box.innerHTML = ''; return; }
 
-    box.innerHTML = entry.products.map(p =>
-        `<button type="button" class="pick-btn${p.product === entry.product ? ' on' : ''}"
-                 onclick="pickProduct('${p.product}')">${p.product}</button>`
-    ).join('');
+    box.innerHTML = productGroupsHtml(entry.products, entry.product, 'pickProduct');
 }
 
 function renderEntryProcesses() {

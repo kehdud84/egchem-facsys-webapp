@@ -115,10 +115,7 @@ function renderRunProducts() {
     const box = document.getElementById('run-products');
     if (!box) return;
     if (!entry.products) { box.innerHTML = ''; return; }
-    box.innerHTML = entry.products.map(p =>
-        `<button type="button" class="pick-btn${p.product === run.product ? ' on' : ''}"
-                 onclick="pickRunProduct('${esc(p.product)}')">${esc(p.product)}</button>`
-    ).join('');
+    box.innerHTML = productGroupsHtml(entry.products, run.product, 'pickRunProduct');
 }
 
 function pickRunProduct(product) {

@@ -9,15 +9,15 @@
     <meta name="mobile-web-app-capable" content="yes">
     
     <!-- 외부 스타일시트 (preload로 조기 다운로드) -->
-    <link rel="preload" href="styles/main.css?v=20260918b" as="style">
-    <link rel="stylesheet" href="styles/main.css?v=20260918b">
+    <link rel="preload" href="styles/main.css?v=20260918d" as="style">
+    <link rel="stylesheet" href="styles/main.css?v=20260918d">
     
     <!-- JS 사전 다운로드 (defer 실행이지만 다운로드는 빨리 시작) -->
-    <link rel="preload" href="js/googleSheets.js?v=20260918b" as="script">
-    <link rel="preload" href="js/equipment.js?v=20260918b" as="script">
-    <link rel="preload" href="js/process.js?v=20260918b" as="script">
-    <link rel="preload" href="js/run.js?v=20260918b" as="script">
-    <link rel="preload" href="js/app.js?v=20260918b" as="script">
+    <link rel="preload" href="js/googleSheets.js?v=20260918d" as="script">
+    <link rel="preload" href="js/equipment.js?v=20260918d" as="script">
+    <link rel="preload" href="js/process.js?v=20260918d" as="script">
+    <link rel="preload" href="js/run.js?v=20260918d" as="script">
+    <link rel="preload" href="js/app.js?v=20260918d" as="script">
 </head>
 <body>
     <!-- 헤더 -->
@@ -88,7 +88,7 @@
 
             <div class="entry-step">
                 <div class="entry-label"><span class="entry-num">1</span> 제품</div>
-                <div id="entry-products" class="pick-row"></div>
+                <div id="entry-products" class="prod-groups"></div>
             </div>
 
             <div class="entry-step" id="entry-step-process" style="display: none;">
@@ -147,7 +147,7 @@
 
             <div class="entry-step">
                 <div class="entry-label"><span class="entry-num">1</span> 제품</div>
-                <div id="run-products" class="pick-row"></div>
+                <div id="run-products" class="prod-groups"></div>
             </div>
 
             <div class="entry-step" id="run-step-lots" style="display: none;">
@@ -402,10 +402,10 @@
     </script>
     
     <!-- 외부 JavaScript (defer: HTML 파싱을 차단하지 않고, 순서는 유지) -->
-    <script src="js/googleSheets.js?v=20260918b" defer></script>
-    <script src="js/equipment.js?v=20260918b" defer></script>
-    <script src="js/process.js?v=20260918b" defer></script>
-    <script src="js/run.js?v=20260918b" defer></script>
-    <script src="js/app.js?v=20260918b" defer></script>
+    <script src="js/googleSheets.js?v=20260918d" defer></script>
+    <script src="js/equipment.js?v=20260918d" defer></script>
+    <script src="js/process.js?v=20260918d" defer></script>
+    <script src="js/run.js?v=20260918d" defer></script>
+    <script src="js/app.js?v=20260918d" defer></script>
 </body>
 </html>
