@@ -2379,14 +2379,9 @@ body {
 }
 .pick-btn.more:hover { border-color: #26A69A; color: #16746B; }
 
-/* 제품을 라인별로 묶어 보여 준다 */
-.prod-group { margin-bottom: 0.9rem; }
+/* 제품을 라인별로 묶어 보여 준다.
+   ★ 라인 이름은 글씨로 적지 않는다 — 줄 간격만으로 묶는다.
+     버튼 사이는 0.6rem, 묶음 사이는 1.4rem.
+     두 배 넘게 벌려야 글씨 없이도 "여기서 갈리는구나"가 보인다. */
+.prod-group { margin-bottom: 1.4rem; }
 .prod-group:last-child { margin-bottom: 0; }
-
-.prod-line {
-    font-size: 0.74rem;
-    font-weight: 700;
-    color: #9aa0a1;
-    letter-spacing: 0.03em;
-    margin-bottom: 0.4rem;
-}

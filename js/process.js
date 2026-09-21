@@ -37,7 +37,9 @@ const PROCESS_LETTER = { '합성': 'A', '정제': 'S' };
    제품을 라인별로 묶어 보여 준다.
    여덟 개를 한 줄로 늘어놓으면 어느 라인 것인지 안 보이고,
    급할 때 옆 칸을 누른다. 라인이 다르면 아예 다른 설비다.
-   ★ 여기 없는 제품은 맨 아래 「기타」로 나온다 — 시트에 제품이 늘어도 사라지지 않게.
+   ★ 여기 없는 제품은 맨 아래 따로 한 묶음으로 나온다 — 시트에 제품이 늘어도 사라지지 않게.
+   ★ line은 화면에 안 나온다. 반응기를 찾을 때 쓰는 속 이름일 뿐이다.
+     화면에는 줄만 띄워 놓는다 — 우리 사람은 알아보고, 밖에서는 설비 배치를 모른다.
    ---------------------------------------- */
 const PRODUCT_GROUPS = [
     { line: '100 · 200 Line', products: ['ZAC', 'HAC', 'TEMAZ', 'TDMATi'] },
@@ -47,6 +49,8 @@ const PRODUCT_GROUPS = [
 /**
  * 제품 버튼을 라인별로 묶은 HTML.
  * 「제품 입력」과 「공정 진행」이 같은 걸 쓴다 — 두 화면이 달라 보이면 안 된다.
+ * ★ 라인 이름은 화면에 적지 않는다. 줄만 띄워 묶는다 —
+ *   우리 사람은 어느 묶음인지 알고, 밖에서 보는 사람은 설비 배치를 모른다.
  */
 function productGroupsHtml(products, selected, onclickFn) {
     const names = (products || []).map(p => p.product);
@@ -62,7 +66,6 @@ function productGroupsHtml(products, selected, onclickFn) {
         if (!inGroup.length) return;
         inGroup.forEach(n => used.add(n));
         html += `<div class="prod-group">
-                   <div class="prod-line">${esc(g.line)}</div>
                    <div class="pick-row">${inGroup.map(btn).join('')}</div>
                  </div>`;
     });
@@ -70,7 +73,6 @@ function productGroupsHtml(products, selected, onclickFn) {
     const rest = names.filter(n => !used.has(n));
     if (rest.length) {
         html += `<div class="prod-group">
-                   <div class="prod-line">기타</div>
                    <div class="pick-row">${rest.map(btn).join('')}</div>
                  </div>`;
     }
