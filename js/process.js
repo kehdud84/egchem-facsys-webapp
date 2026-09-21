@@ -190,6 +190,30 @@ function nextPurifyNo(lotNo, allLots) {
     return base + '-S' + String(max + 1).padStart(2, '0');
 }
 
+/* ----------------------------------------
+   Lot 번호 앞자리
+     ZAC  + EGR-101 → 'ZAC26-08'      (라인 숫자 안 씀)
+     DIPAS + EGR-501 → 'DPS526-08'    (DIPAS만 4·5 라인이 갈려서 숫자를 끼운다)
+   뒤에 일(日)과 -A01 / -S01이 붙어 완성된다.
+   ★ 이 앞자리는 그 달의 회차를 셀 때 시트 쪽으로도 그대로 넘어간다
+     (fillNextSeq → getNextLotSeq). 여기 모양이 바뀌면 회차도 같이 어긋난다.
+   ---------------------------------------- */
+function lotCodePrefix(product, reactor) {
+    const info = PRODUCT_CODES[product] || { code: product, useLine: false };
+    let code = info.code || product;
+
+    if (info.useLine) {
+        // 'EGR-501' → '5'.  반응기를 아직 안 골랐으면 숫자 없이 둔다.
+        const m = /(\d)\d\d$/.exec(String(reactor || ''));
+        if (m) code += m[1];
+    }
+
+    const d = todayKSTDate();
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${code}${yy}-${mm}`;
+}
+
 function makeLotNo(product, process, reactor, seq) {
     const d = todayKSTDate();
     const dd = String(d.getDate()).padStart(2, '0');
@@ -456,11 +480,13 @@ function markLotTouched() {
     updateEntrySubmit();
 }
 
+// 「자동」 버튼. 화면을 처음 그릴 때와 똑같은 번호가 나와야 한다 —
+// 정제는 고른 원래 Lot에서 뽑고, 합성은 그 달의 회차로 만든다.
 function resetLotNo() {
     const input = document.getElementById('entry-lot');
     if (!input) return;
     delete input.dataset.touched;
-    input.value = makeLotNo(entry.product, entry.process, entry.reactor, entry.seq || 1);
+    renderEntryLot();
     updateEntrySubmit();
 }
 
