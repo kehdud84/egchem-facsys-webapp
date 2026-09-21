@@ -777,8 +777,8 @@ async function submitConcentrate(order) {
 
 /**
  * 다음 정제 번호. 규칙은 process.js의 nextPurifyNo()에 있다.
- *   DPS426-0801-A01      → DPS426-0801-A01-S01
- *   DPS426-0801-A01-S01  → DPS426-0801-A01-S02
+ *   ZAC26-0801-A01  → ZAC26-0801-S01
+ *   ZAC26-0801-S01  → ZAC26-0801-S02
  * 몇 차인지는 시트에 이미 있는 번호를 세어서 정한다.
  */
 function nextProcessLotNo(lotNo) {
